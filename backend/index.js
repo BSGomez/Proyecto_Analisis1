@@ -1,11 +1,13 @@
 import express from "express";
 import mssql from "mssql";
+import cors from "cors";
 
 
 const app = express();
 
 // Middleware
 app.use(express.json());
+app.use(cors());
 
 const dbConfig = {
     user: "sa",
@@ -135,7 +137,7 @@ app.delete("/balanceSaldos/:id", async (req, res) => {
     }
 });
 
-//metodo delete balance de saldos
+//get cuenta contable
 
 app.get("/cuentaContable", async (req, res)=>{
     try{
