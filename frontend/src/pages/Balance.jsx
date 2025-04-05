@@ -13,13 +13,13 @@ const Balance = () => {
   const [loading, setLoading] = useState(true);
 
   const [datos, setDatos] = useState({
-    BAL_id_balance: 222,
-    BAL_cuenta: 2222,
-    BAL_periodo: '2000-02-02',
-    BAL_saldo_inicial: 20,
-    BAL_debito: 20,
-    BAL_credito: 20,
-    BAL_saldo_final: 20
+    BAL_id_balance: '',
+    BAL_cuenta: '',
+    BAL_periodo: '',
+    BAL_saldo_inicial: '',
+    BAL_debito: '',
+    BAL_credito: '',
+    BAL_saldo_final: ''
   });
 
   // Función para obtener los datos
@@ -41,13 +41,42 @@ const Balance = () => {
     fetchBalance();
   }, []);
 
+  // Función para manejar el cambio en los inputs
+  const handleChange = (e) => {
+        const { name, value } = e.target;
+    
+        // Convierte los valores a los tipos correctos dentro de handleChange
+        if (name === 'BAL_id_balance' || name === 'BAL_cuenta') {
+          setDatos({
+            ...datos,
+            [name]: value ? parseInt(value, 10) : ''  // Convertir a entero
+          });
+        } else if (
+          name === 'BAL_saldo_inicial' ||
+          name === 'BAL_debito' ||
+          name === 'BAL_credito' ||
+          name === 'BAL_saldo_final'
+        ) {
+          setDatos({
+            ...datos,
+            [name]: value ? parseFloat(value) : ''  // Convertir a float
+          });
+        } else {
+          setDatos({
+            ...datos,
+            [name]: value // Dejar el campo de texto como está
+          });
+        }
+      };
+
+
   // Función para enviar datos por POST
   const enviarDatos = async () => {
     try {
       const response = await axios.post('http://localhost:8800/balanceSaldos', datos);
       console.log("Respuesta del servidor:", response.data);
       alert("Datos enviados correctamente");
-      fetchBalance(); // 👈 Recarga los datos después de insertar
+      fetchBalance(); // Recarga los datos después de insertar
     } catch (error) {
       console.error("Error al enviar los datos:", error);
       alert("Error al enviar los datos");
@@ -88,25 +117,25 @@ const Balance = () => {
       <div className="form-Box" style={{ marginTop: '20px', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div className="card flex justify-content-center">
-            <InputText keyfilter="int" values={datos.BAL_id_balance} placeholder="ID" />
+            <InputText keyfilter="int" value={datos.BAL_id_balance} name="BAL_id_balance" onChange={handleChange} placeholder="ID" />
           </div>
           <div className="card flex justify-content-center">
-            <InputText keyfilter="int" values={datos.BAL_cuenta} placeholder="CUENTA" />
+            <InputText keyfilter="int" value={datos.BAL_cuenta} name="BAL_cuenta" onChange={handleChange} placeholder="CUENTA" />
           </div>
           <div className="card flex justify-content-center">
-            <InputText values={datos.BAL_periodo} placeholder="PERIODO" />
+            <InputText value={datos.BAL_periodo} onChange={handleChange} name='BAL_periodo' placeholder="PERIODO" />
           </div>
           <div className="card flex justify-content-center">
-            <InputText keyfilter="int" values={datos.BAL_saldo_inicial} placeholder="SALDO INICIAL" />
+            <InputText keyfilter="int" value={datos.BAL_saldo_inicial} name='BAL_saldo_inicial' onChange={handleChange} placeholder="SALDO INICIAL" />
           </div>
           <div className="card flex justify-content-center">
-            <InputText keyfilter="int" values={datos.BAL_debito} placeholder="DEBITO" />
+            <InputText keyfilter="int" value={datos.BAL_debito} name='BAL_debito' onChange={handleChange} placeholder="DEBITO" />
           </div>
           <div className="card flex justify-content-center">
-            <InputText keyfilter="int" values={datos.BAL_credito} placeholder="CREDITO" />
+            <InputText keyfilter="int" value={datos.BAL_credito} name='BAL_credito' onChange={handleChange} placeholder="CREDITO" />
           </div>
           <div className="card flex justify-content-center">
-            <InputText keyfilter="int" values={datos.BAL_saldo_final} placeholder="SALDO FINAL" />
+            <InputText keyfilter="int" value={datos.BAL_saldo_final} name='BAL_saldo_final' onChange={handleChange} placeholder="SALDO FINAL" />
           </div>
         </div>
       </div>
