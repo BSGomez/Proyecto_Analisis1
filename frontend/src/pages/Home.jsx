@@ -14,13 +14,13 @@ const Home = () => {
         <Button
           label="Ver Balance de Saldos"
           icon="pi pi-table"
-          className="p-button-primary"
+          className="p-button p-button-primary p-button-lg"
           onClick={() => window.location.href = '/Balance'}
         />
         <Button
           label="Ver Cuenta Contable"
           icon="pi pi-book"
-          className="p-button-primary"
+          className="p-button p-button-primary p-button-lg"
           onClick={() => window.location.href = '/Cuenta'}
         />
       </div>

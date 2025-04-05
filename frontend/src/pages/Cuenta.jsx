@@ -5,6 +5,7 @@ import { Column } from 'primereact/column';
 import 'primereact/resources/themes/saga-blue/theme.css'; // Tema de PrimeReact
 import 'primereact/resources/primereact.min.css'; // Estilos de PrimeReact
 import { InputText } from 'primereact/inputtext';
+import { Button } from 'primereact/button';
 
 const Cuenta = () => {
   const [cuentas, setCuentas] = useState([]);
@@ -169,9 +170,11 @@ const Cuenta = () => {
       <br />
 
       <div className="buttons" style={{ marginTop: '20px', textAlign: 'center' }}>
-        <button onClick={enviarDatos} className="btn btn-primary">Agregar</button>
-        <button onClick={modificarDatos} className="btn btn-secondary">Modificar</button>
-        <button className="btn btn-danger" onClick={() => eliminarDatos(datos.CNT_id_cuenta)}>Eliminar</button>
+        <Button label="Agregar" icon="pi pi-plus" className="p-button p-button-primary" onClick={enviarDatos} />
+        <Button label="Modificar" icon="pi pi-pencil" className="p-button p-button-primary" onClick={modificarDatos} style={{ marginLeft: '10px' }} />
+        <Button label="Eliminar" icon="pi pi-trash" className="p-button p-button-primary" onClick={() => eliminarDatos(datos.CNT_id_cuenta)} style={{ marginLeft: '10px' }} />
+        <br />
+        <Button label="Volver" icon="pi pi-arrow-left" className="p-button p-button-primary" onClick={() => window.location.href = '/'} style={{ marginTop: '10px' }} />
       </div>
     </div>
   );
