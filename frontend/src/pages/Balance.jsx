@@ -22,6 +22,8 @@ const Balance = () => {
     BAL_saldo_final: ''
   });
 
+  const [selectedBalance, setSelectedBalance] = useState(null); // Para almacenar el registro seleccionado
+
   // Función para obtener los datos
   const fetchBalance = async () => {
     try {
@@ -83,7 +85,25 @@ const Balance = () => {
     }
   };
 
+  // Función para enviar datos por PUT (Modificar)
+  const modificarDatos = async () => {
+        if (!selectedBalance) {
+          alert('Por favor selecciona un registro para modificar');
+          return;
+        }
+        try {
+          const response = await axios.put(`http://localhost:8800/balanceSaldos/${selectedBalance.BAL_id_balance}`, datos);
+          console.log("Respuesta del servidor:", response.data);
+          alert("Datos modificados correctamente");
+          fetchBalance(); // Recarga los datos después de modificar
+          setSelectedBalance(null); // Limpiar el registro seleccionado después de la actualización
+        } catch (error) {
+          console.error("Error al modificar los datos:", error);
+          alert("Error al modificar los datos");
+        }
+      };
 
+      //Funcion para eliminar datos
   const eliminarDatos = async (id) => {
         try {
           const response = await axios.delete(`http://localhost:8800/balanceSaldos/${id}`);
@@ -94,6 +114,12 @@ const Balance = () => {
           console.error("Error al eliminar los datos:", error);
           alert("Error al eliminar los datos");
         }
+      };
+
+      // Función para seleccionar el registro a modificar
+  const handleEdit = (rowData) => {
+        setDatos(rowData); // Cargar datos en el formulario
+        setSelectedBalance(rowData); // Guardar el registro seleccionado para actualizarlo
       };
 
 
@@ -115,7 +141,7 @@ const Balance = () => {
 
       {!loading && !error && (
         <div className="Balance">
-          <DataTable value={balance} paginator rows={10} responsiveLayout="scroll">
+          <DataTable value={balance} paginator rows={10} responsiveLayout="scroll" selectionMode="single" onSelectionChange={(e) => handleEdit(e.value)}>
             <Column field="BAL_id_balance" header="ID" sortable></Column>
             <Column field="BAL_cuenta" header="Cuenta" sortable></Column>
             <Column field="BAL_periodo" header="Periodo" sortable></Column>
@@ -157,7 +183,7 @@ const Balance = () => {
 
       <div className="buttons" style={{ marginTop: '20px', textAlign: 'center' }}>
         <button onClick={enviarDatos} className="btn btn-primary">Agregar</button>
-        <button className="btn btn-secondary">Modificar</button>
+        <button onClick={modificarDatos} className="btn btn-secondary">Modificar</button>
         <button className="btn btn-danger" onClick={() => eliminarDatos(datos.BAL_id_balance)}>Eliminar</button>
       </div>
     </div>
