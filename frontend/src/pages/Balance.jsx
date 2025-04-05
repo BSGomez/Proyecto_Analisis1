@@ -83,6 +83,20 @@ const Balance = () => {
     }
   };
 
+
+  const eliminarDatos = async (id) => {
+        try {
+          const response = await axios.delete(`http://localhost:8800/balanceSaldos/${id}`);
+          console.log("Respuesta del servidor:", response.data);
+          alert("Datos eliminados correctamente");
+          fetchBalance(); // Recarga los datos después de eliminar
+        } catch (error) {
+          console.error("Error al eliminar los datos:", error);
+          alert("Error al eliminar los datos");
+        }
+      };
+
+
   return (
     <div>
       <h1><center>Balance de saldos</center></h1>
@@ -144,7 +158,7 @@ const Balance = () => {
       <div className="buttons" style={{ marginTop: '20px', textAlign: 'center' }}>
         <button onClick={enviarDatos} className="btn btn-primary">Agregar</button>
         <button className="btn btn-secondary">Modificar</button>
-        <button className="btn btn-danger">Eliminar</button>
+        <button className="btn btn-danger" onClick={() => eliminarDatos(datos.BAL_id_balance)}>Eliminar</button>
       </div>
     </div>
   );
