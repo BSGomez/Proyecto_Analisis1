@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
     res.json("Hola, este es el backend");
 });
 
-//metodo get balance de saldos
+//metodo get balance de saldos para obtener todos los registros
 app.get("/balanceSaldos", async (req, res) => {
     try {
         if (!pool) {
@@ -52,7 +52,7 @@ app.get("/balanceSaldos", async (req, res) => {
     }
 });
 
-//metodo post balance de saldos
+//metodo post balance de saldos para insertar registros
 app.post("/balanceSaldos", async (req, res) => {
     try {
         if (!pool) {

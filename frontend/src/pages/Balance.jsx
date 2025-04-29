@@ -103,6 +103,9 @@ const Balance = () => {
         }
       };
 
+      // Si no se seleccionó un registro, usaremos el ID proporcionado
+    const idBalance = selectedBalance ? selectedBalance.BAL_id_balance : datos.BAL_id_balance;
+
       //Funcion para eliminar datos
   const eliminarDatos = async (id) => {
         try {
