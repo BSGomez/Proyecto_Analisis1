@@ -141,9 +141,9 @@ app.delete("/balanceSaldos/:id", async (req, res) => {
 
 app.get("/cuentaContable", async (req, res)=>{
     try{
-        if (!pool){
-            return res.json(result.recordset);
-        }
+        if (!pool) {
+            return res.status(500).json({ error: "No hay conexión con la base de datos" });
+        }        
 
         const result = await pool.request().query("SELECT * FROM CON_CUENTA_CONTABLE;");
         res.json(result.recordset);
@@ -234,6 +234,63 @@ app.delete("/cuentaContable/:id", async (req, res) => {
         res.status(500).json({ error: "Error en la consulta DELETE en la base de datos", details: err.message });
     }
 });
+
+// Crear una nueva partida contable
+app.post("/partida", async (req, res) => {
+    try {
+        if (!pool) {
+            return res.status(500).json({ error: "No hay conexión con la base de datos" });
+        }
+
+        const { PAR_id_partida, PAR_fecha, PAR_concepto } = req.body;
+
+        const result = await pool.request()
+            .input("PAR_id_partida", mssql.Int, PAR_id_partida)
+            .input("PAR_fecha", mssql.Date, PAR_fecha)
+            .input("PAR_concepto", mssql.VarChar, PAR_concepto)
+            .query(`
+                INSERT INTO Partidas (PAR_id_partida, PAR_fecha, PAR_concepto)
+                VALUES (@PAR_id_partida, @PAR_fecha, @PAR_concepto);
+            `);
+
+        res.status(201).json({ message: "Partida creada correctamente", data: result });
+    } catch (err) {
+        console.error("Error al crear partida:", err);
+        res.status(500).json({ error: "Error al crear partida", details: err.message });
+    }
+});
+
+// Insertar un detalle de partida (movimiento)
+app.post("/partidaDetalle", async (req, res) => {
+    try {
+        if (!pool) {
+            return res.status(500).json({ error: "No hay conexión con la base de datos" });
+        }
+
+        const { PDT_id_detalle, PDT_id_partida, PDT_id_cuenta, PDT_debe, PDT_haber } = req.body;
+
+        const result = await pool.request()
+            .input("PDT_id_detalle", mssql.Int, PDT_id_detalle)
+            .input("PDT_id_partida", mssql.Int, PDT_id_partida)
+            .input("PDT_id_cuenta", mssql.Int, PDT_id_cuenta)
+            .input("PDT_debe", mssql.Float, PDT_debe)
+            .input("PDT_haber", mssql.Float, PDT_haber)
+            .query(`
+                INSERT INTO Detalle_Partida (PDT_id_detalle, PDT_id_partida, PDT_id_cuenta, PDT_debe, PDT_haber)
+                VALUES (@PDT_id_detalle, @PDT_id_partida, @PDT_id_cuenta, @PDT_debe, @PDT_haber);
+            `);
+
+        res.status(201).json({ message: "Detalle insertado correctamente", data: result });
+    } catch (err) {
+        console.error("Error al crear detalle de partida:", err);
+        res.status(500).json({ error: "Error al crear detalle de partida", details: err.message });
+    }
+});
+
+
+
+
+
 
 const PORT = 8800;
 app.listen(PORT, () => {
