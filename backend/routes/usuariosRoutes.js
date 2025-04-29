@@ -1,13 +1,14 @@
 import express from 'express';
-import * as usuariosController from '../controllers/usuariosControllers.js'; // Asegúrate de que la ruta sea correcta
+import * as usuariosController from '../controllers/usuariosControllers.js';
 
 const router = express.Router();
 
- 
-router.get('/CON_USUARIO', usuariosController.obtenerTodosLosUsuarios);
-router.post('/CON_USUARIO', usuariosController.crearUsuario);
-router.put('/CON_USUARIO/:id', usuariosController.actualizarUsuario);
-router.delete('/CON_USUARIO/:id', usuariosController.eliminarUsuario);
+router.get('/usuarios', usuariosController.obtenerTodosLosUsuarios);
+//router.post('/usuarios', usuariosController.crearUsuario);
+//router.put('/usuarios/:id', usuariosController.actualizarUsuario);
+//router.delete('/usuarios/:id', usuariosController.eliminarUsuario);
 
- 
+// Nueva ruta para obtener roles
+//router.get('/roles', usuariosController.obtenerRoles);
+
 export default router;

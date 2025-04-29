@@ -1,5 +1,6 @@
 // db.js
 import mssql from 'mssql';
+import cors from 'cors';
 
 // Configuración de la base de datos
 const dbConfig = {
@@ -26,3 +27,4 @@ export async function connectDB() {
 
 // Exportar la conexión (poolPromise) para usarla en otros archivos
 export { poolPromise };
+

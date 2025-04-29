@@ -1,3 +1,4 @@
+/*
 import express from 'express';
 import * as partidasController from '../controllers/partidacontableControllers.js'; 
 
@@ -10,3 +11,4 @@ router.delete('/CON_PARTIDA_CONTABLE/:id', partidasController.eliminarPartida);
 
 
 export default router;
+*/

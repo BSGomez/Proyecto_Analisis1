@@ -24,8 +24,19 @@ const insertarDatos = async (tabla, columnas, valores) => {
         const request = pool.request();
 
         columnas.forEach((col, index) => {
-            request.input(col, mssql.Char, valores[index]);
+            let tipo = mssql.VarChar;
+        
+            if (col === "Nivel" || col === "Cuenta_Padre") {
+                tipo = mssql.Int; // usa Int para campos numéricos
+            }
+        
+            if (valores[index] === null) {
+                request.input(col, tipo, null);
+            } else {
+                request.input(col, tipo, valores[index]);
+            }
         });
+        
 
         await request.query(query);
     } catch (err) {

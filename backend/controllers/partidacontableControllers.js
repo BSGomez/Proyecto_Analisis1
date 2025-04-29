@@ -1,4 +1,5 @@
 
+/*
 import { getData, insertarDatos, actualizarRegistro, eliminarRegistro } from '../utils/dbutils.js';
 
 import { poolPromise } from '../db.js';
@@ -149,3 +150,4 @@ export const eliminarPartida = async (req, res) => {
         res.status(500).json({ error: "Error al eliminar partida contable en la base de datos" });
     }
 };
+*/

@@ -1,0 +1,85 @@
+/* Estilos generales reutilizables para el sistema contable */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #F2F3F4;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .catalogo-cuentas {
+    padding: 2rem;
+    background-color: #F2F3F4;
+  }
+  
+  .title {
+    color: #F2F3F4;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Tabla */
+  .tabla-cuentas .p-datatable {
+    border: 1px solid #F2F3F4;
+    border-radius: 5px;
+  }
+  
+  .p-datatable .p-column-header-content {
+    background-color: #F2F3F4;
+    color: #170E11;
+    font-weight: bold;
+  }
+  
+  /* Botones */
+  .p-button {
+    font-weight: bold;
+  }
+  
+  .p-button-success {
+    background-color: #20709C !important;
+    border-color: #20709C !important;
+  }
+  
+  .p-button-success:hover {
+    background-color: #145978 !important;
+  }
+  
+  .p-button-secondary {
+    background-color: #507592 !important;
+    border-color: #507592 !important;
+  }
+  
+  .p-button-secondary:hover {
+    background-color: #3f5f75 !important;
+  }
+  
+  .p-button-warning {
+    background-color: #20709C !important;
+    border-color: #507592 !important;
+    color: #F2F3F4 !important;
+  }
+  
+  .p-button-danger {
+    background-color: #20709C !important;
+    border-color: #507592 !important;
+    color: #ffffff !important;
+  }
+  
+  .top-buttons {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  /* Dialog */
+  .p-dialog .p-dialog-header {
+    background-color: #F2F3F4;
+    color: #170E11;
+    font-weight: bold;
+  }
+  
+  .p-dialog .p-dialog-content {
+    background-color: #F2F3F4;
+  }
+  

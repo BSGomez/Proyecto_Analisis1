@@ -1,0 +1,20 @@
+/* Archivo CatalogoCuentas.css */
+.catalogo-cuentas {
+    margin: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+}
+
+.title {
+    font-size: 24px;
+    color: #333;
+}
+
+.tabla-cuentas {
+    margin-top: 20px;
+}
+
+.form-box {
+    margin-top: 20px;
+}
