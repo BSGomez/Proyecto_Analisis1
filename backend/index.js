@@ -337,6 +337,115 @@ app.delete("/CatalogoCuentas/:id", async (req, res) => {
 });
 
 
+// Método POST para insertar una nueva partida y sus detalles
+app.post("/partidas", async (req, res) => {
+    const transaction = new mssql.Transaction(pool);
+
+    try {
+        const {
+            Fecha,
+            Numero_Asiento,
+            Descripcion,
+            ID_Usuario_Creacion,
+            ID_Tipo_Asiento,
+            ID_Poliza,
+            Detalles
+        } = req.body;
+
+        await transaction.begin();
+
+        const request = new mssql.Request(transaction);
+
+        // Insertar la partida
+        const resultPartida = await request
+            .input("Fecha", mssql.Date, Fecha)
+            .input("Numero_Asiento", mssql.Int, Numero_Asiento)
+            .input("Descripcion", mssql.VarChar(255), Descripcion)
+            .input("ID_Usuario_Creacion", mssql.Int, ID_Usuario_Creacion)
+            .input("ID_Tipo_Asiento", mssql.Int, ID_Tipo_Asiento)
+            .input("ID_Poliza", mssql.Int, ID_Poliza)
+            .query(`
+                INSERT INTO Partidas (Fecha, Numero_Asiento, Descripcion, ID_Usuario_Creacion, ID_Tipo_Asiento, ID_Poliza)
+                OUTPUT INSERTED.ID_Partida
+                VALUES (@Fecha, @Numero_Asiento, @Descripcion, @ID_Usuario_Creacion, @ID_Tipo_Asiento, @ID_Poliza);
+            `);
+
+        const ID_Partida = resultPartida.recordset[0].ID_Partida;
+
+        // Insertar detalles de partida — creando un nuevo request por cada detalle
+        for (const detalle of Detalles) {
+            const detalleRequest = new mssql.Request(transaction); // ← nuevo objeto por iteración
+
+            await detalleRequest
+                .input("ID_Partida", mssql.Int, ID_Partida)
+                .input("Cuenta", mssql.VarChar(50), detalle.Cuenta)
+                .input("Debe", mssql.Decimal(15, 2), detalle.Debe || 0)
+                .input("Haber", mssql.Decimal(15, 2), detalle.Haber || 0)
+                .input("Descripcion", mssql.VarChar(255), detalle.Descripcion || null)
+                .input("ID_Impuesto", mssql.Int, detalle.ID_Impuesto || null)
+                .query(`
+                    INSERT INTO Detalles_Partida (ID_Partida, Cuenta, Debe, Haber, Descripcion, ID_Impuesto)
+                    VALUES (@ID_Partida, @Cuenta, @Debe, @Haber, @Descripcion, @ID_Impuesto);
+                `);
+        }
+
+        await transaction.commit();
+
+        res.status(201).json({ message: "Partida y detalles insertados correctamente", ID_Partida });
+    } catch (err) {
+        await transaction.rollback();
+        console.error("Error al insertar la partida:", err);
+        res.status(500).json({ error: "Error al insertar la partida", details: err.message });
+    }
+});
+
+
+// Método GET para obtener todas las partidas tomando en cuenta que estan relacionadas las tablas partidas y detalles de partida
+app.get("/libro-diario", async (req, res) => {
+    try {
+        const result = await pool.request().query(`
+            SELECT 
+                p.ID_Partida, 
+                p.Fecha, 
+                p.Numero_Asiento, 
+                p.Descripcion AS Descripcion_Partida,
+                -- Agrupando los detalles de la partida en un JSON
+                (
+                    SELECT 
+                        d.ID_Detalle, 
+                        d.Cuenta, 
+                        d.Debe, 
+                        d.Haber, 
+                        d.Descripcion AS Descripcion_Detalle
+                    FROM Detalles_Partida d
+                    WHERE d.ID_Partida = p.ID_Partida
+                    FOR XML PATH(''), TYPE
+                ).value('.', 'NVARCHAR(MAX)') AS Detalles
+            FROM Partidas p
+            ORDER BY p.Fecha, p.Numero_Asiento;
+        `);
+
+        // Procesar el resultado para convertir el XML en JSON
+        const resultSet = result.recordset.map(record => {
+            // Convierte el XML a un array de objetos
+            const detallesXML = record.Detalles;
+            if (detallesXML) {
+                // Aquí podrías convertir el XML a un array de objetos si es necesario
+                record.Detalles = detallesXML.replace(/<[^>]*>/g, '');
+            }
+            return record;
+        });
+
+        res.json(resultSet);
+    } catch (err) {
+        console.error("Error al obtener el libro diario:", err);
+        res.status(500).json({ error: "Error al obtener el libro diario", details: err.message });
+    }
+});
+
+
+
+
 
 const PORT = 8800;
 app.listen(PORT, () => {
