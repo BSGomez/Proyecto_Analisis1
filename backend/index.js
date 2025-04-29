@@ -443,6 +443,97 @@ app.get("/libro-diario", async (req, res) => {
     }
 });
 
+// Método DELETE para eliminar una partida y sus detalles
+app.delete("/partidas/:id", async (req, res) => {
+    const transaction = new mssql.Transaction(pool);
+
+    try {
+        const { id } = req.params;  // Obtenemos el ID de la partida desde los parámetros
+
+        await transaction.begin();
+
+        // Crear un nuevo request para eliminar los detalles de la partida
+        const requestDetalles = new mssql.Request(transaction);
+        await requestDetalles
+            .input("ID_Partida", mssql.Int, id)  // Declaramos el parámetro solo para esta consulta
+            .query(`
+                DELETE FROM Detalles_Partida WHERE ID_Partida = @ID_Partida;
+            `);
+
+        // Crear un nuevo request para eliminar la partida principal
+        const requestPartida = new mssql.Request(transaction);
+        await requestPartida
+            .input("ID_Partida", mssql.Int, id)  // Declaramos el parámetro solo para esta consulta
+            .query(`
+                DELETE FROM Partidas WHERE ID_Partida = @ID_Partida;
+            `);
+
+        await transaction.commit();
+
+        res.status(200).json({ message: "Partida y detalles eliminados correctamente." });
+    } catch (err) {
+        await transaction.rollback();
+        console.error("Error al eliminar la partida:", err);
+        res.status(500).json({ error: "Error al eliminar la partida", details: err.message });
+    }
+});
+
+
+
+// Método UPDATE para actualizar una partida y sus detalles
+app.put("/partidas/:id", async (req, res) => {
+    const transaction = new mssql.Transaction(pool);
+
+    try {
+        const { id } = req.params;
+        const { Fecha, Numero_Asiento, Descripcion, Detalles } = req.body;
+
+        await transaction.begin();
+        const request = new mssql.Request(transaction);
+
+        // Actualizar la partida
+        await request
+            .input("ID_Partida", mssql.Int, id)
+            .input("Fecha", mssql.Date, Fecha)
+            .input("Numero_Asiento", mssql.Int, Numero_Asiento)
+            .input("Descripcion", mssql.VarChar(255), Descripcion)
+            .query(`
+                UPDATE Partidas
+                SET Fecha = @Fecha, Numero_Asiento = @Numero_Asiento, Descripcion = @Descripcion
+                WHERE ID_Partida = @ID_Partida;
+            `);
+
+        // Eliminar los detalles actuales antes de actualizar
+        await request
+            .input("ID_Partida", mssql.Int, id)
+            .query(`
+                DELETE FROM Detalles_Partida
+                WHERE ID_Partida = @ID_Partida;
+            `);
+
+        // Insertar los nuevos detalles
+        for (const detalle of Detalles) {
+            await request
+                .input("ID_Partida", mssql.Int, id)
+                .input("Cuenta", mssql.VarChar(50), detalle.Cuenta)
+                .input("Debe", mssql.Decimal(15, 2), detalle.Debe || 0)
+                .input("Haber", mssql.Decimal(15, 2), detalle.Haber || 0)
+                .input("Descripcion", mssql.VarChar(255), detalle.Descripcion || null)
+                .input("ID_Impuesto", mssql.Int, detalle.ID_Impuesto || null)
+                .query(`
+                    INSERT INTO Detalles_Partida (ID_Partida, Cuenta, Debe, Haber, Descripcion, ID_Impuesto)
+                    VALUES (@ID_Partida, @Cuenta, @Debe, @Haber, @Descripcion, @ID_Impuesto);
+                `);
+        }
+
+        await transaction.commit();
+        res.status(200).json({ message: "Partida y detalles actualizados correctamente." });
+    } catch (err) {
+        await transaction.rollback();
+        console.error("Error al actualizar la partida:", err);
+        res.status(500).json({ error: "Error al actualizar la partida", details: err.message });
+    }
+});
 
 
 
