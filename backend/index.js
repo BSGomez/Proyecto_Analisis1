@@ -489,10 +489,10 @@ app.put("/partidas/:id", async (req, res) => {
         const { Fecha, Numero_Asiento, Descripcion, Detalles } = req.body;
 
         await transaction.begin();
-        const request = new mssql.Request(transaction);
 
-        // Actualizar la partida
-        await request
+        // Crear un nuevo request para actualizar la partida
+        const requestPartida = new mssql.Request(transaction);
+        await requestPartida
             .input("ID_Partida", mssql.Int, id)
             .input("Fecha", mssql.Date, Fecha)
             .input("Numero_Asiento", mssql.Int, Numero_Asiento)
@@ -503,17 +503,32 @@ app.put("/partidas/:id", async (req, res) => {
                 WHERE ID_Partida = @ID_Partida;
             `);
 
-        // Eliminar los detalles actuales antes de actualizar
-        await request
+        // Crear un nuevo request para eliminar los detalles actuales
+        const requestEliminarDetalles = new mssql.Request(transaction);
+        await requestEliminarDetalles
             .input("ID_Partida", mssql.Int, id)
             .query(`
                 DELETE FROM Detalles_Partida
                 WHERE ID_Partida = @ID_Partida;
             `);
 
-        // Insertar los nuevos detalles
+        // Validar e insertar los nuevos detalles
         for (const detalle of Detalles) {
-            await request
+            // Validar que la cuenta exista en Catalogo_Cuentas
+            const requestValidarCuenta = new mssql.Request(transaction);
+            const resultValidacion = await requestValidarCuenta
+                .input("Cuenta", mssql.VarChar(50), detalle.Cuenta)
+                .query(`
+                    SELECT Codigo_Cuenta FROM Catalogo_Cuentas WHERE Codigo_Cuenta = @Cuenta;
+                `);
+
+            if (resultValidacion.recordset.length === 0) {
+                throw new Error(`La cuenta '${detalle.Cuenta}' no existe en el catálogo de cuentas.`);
+            }
+
+            // Insertar el detalle
+            const requestDetalle = new mssql.Request(transaction); // Crear un nuevo request para cada detalle
+            await requestDetalle
                 .input("ID_Partida", mssql.Int, id)
                 .input("Cuenta", mssql.VarChar(50), detalle.Cuenta)
                 .input("Debe", mssql.Decimal(15, 2), detalle.Debe || 0)
