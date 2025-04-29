@@ -287,8 +287,105 @@ app.post("/partidaDetalle", async (req, res) => {
     }
 });
 
+//CATALOGO DE CUENTAS   
+// Obtener todas las cuentas del catálogo
+app.get("/CatalogoCuentas", async (req, res) => {
+    try {
+        const result = await pool.request().query("SELECT * FROM Catalogo_Cuentas;");
+        res.json(result.recordset);
+    } catch (err) {
+        console.error("Error GET Catalogo de Cuentas:", err);
+        res.status(500).json({ error: "Error al obtener datos del Catalogo de Cuentas" });
+    }
+});
 
+// Método POST para insertar una nueva cuenta en el catálogo
+app.post("/CatalogoCuentas", async (req, res) => {
+    try {
+        const {
+            Codigo_Cuenta,
+            Nombre_Cuenta,
+            Nivel,
+            Cuenta_Padre,
+            Tipo_Cuenta,
+            Naturaleza_Cuenta
+        } = req.body;
 
+        const result = await pool.request()
+            .input("Codigo_Cuenta", mssql.VarChar(50), Codigo_Cuenta)
+            .input("Nombre_Cuenta", mssql.VarChar(250), Nombre_Cuenta)
+            .input("Nivel", mssql.Int, Nivel)
+            .input("Cuenta_Padre", mssql.VarChar(50), Cuenta_Padre)
+            .input("Tipo_Cuenta", mssql.VarChar(10), Tipo_Cuenta)
+            .input(" Naturaleza_Cuenta", mssql.VarChar(10), Naturaleza_Cuenta)
+            .query(`
+                INSERT INTO Catalogo_Cuenta
+                (Codigo_Cuenta, Nombre_Cuenta, Nivel, Cuenta_Padre, Tipo_Cuenta, Naturaleza_Cuenta)
+                VALUES (@Codigo_Cuenta, @Nombre_Cuenta, @Nivel, @Cuenta_Padre, @Tipo_Cuenta, @Naturaleza_Cuenta);
+            `);
+
+        res.status(201).json({ message: "Registro agregado correctamente" });
+    } catch (err) {
+        console.error("Error POST Catalogo de Cuentas:", err);
+        res.status(500).json({ error: "Error al insertar en Catalogo de Cuentas" });
+    }
+});
+
+// Método PUT para actualizar un registro en el catálogo de cuentas
+app.put("/CatalogoCuentas/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            Codigo_Cuenta,
+            Nombre_Cuenta,
+            Nivel,
+            Cuenta_Padre,
+            Tipo_Cuenta,
+            Naturaleza_Cuenta
+        } = req.body;
+
+        const result = await pool.request()
+            .input("Codigo_Cuenta", mssql.VarChar(50), Codigo_Cuenta)
+            .input("Nombre_Cuenta", mssql.VarChar(255), Nombre_Cuenta)
+            .input("Nivel", mssql.Int, Nivel)
+            .input("Cuenta_Padre", mssql.VarChar(50), Cuenta_Padre)
+            .input("Tipo_Cuenta", mssql.VarChar(10), Tipo_Cuenta)
+            .input("Naturaleza_Cuenta", mssql.VarChar(10), Naturaleza_Cuenta) // Eliminé el espacio extra en " Naturaleza_Cuenta"
+            .input("Id", mssql.VarChar(50), id) // Asigné el id al parámetro para la cláusula WHERE
+            .query(`
+                UPDATE Catalogo_Cuentas
+                SET 
+                    Codigo_Cuenta = @Codigo_Cuenta,
+                    Nombre_Cuenta = @Nombre_Cuenta,
+                    Nivel = @Nivel,
+                    Cuenta_Padre = @Cuenta_Padre,
+                    Tipo_Cuenta = @Tipo_Cuenta,
+                    Naturaleza_Cuenta = @Naturaleza_Cuenta
+                WHERE Codigo_Cuenta = @Id;  
+            `);
+
+        res.json({ message: "Registro actualizado correctamente", result });
+    } catch (err) {
+        console.error("Error actualizando el registro en el Catálogo de Cuentas:", err);
+        res.status(500).json({ error: "Error al actualizar el registro" });
+    }
+});
+
+// Método DELETE para eliminar un registro en el catálogo de cuentas
+app.delete("/CatalogoCuentas/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.request()
+            .input("Codigo_Cuenta", mssql.VarChar(50), id) 
+            .query("DELETE FROM Catalogo_Cuentas WHERE Codigo_Cuenta = @Codigo_Cuenta;"); 
+
+        res.json({ message: "Registro eliminado correctamente", result });
+    } catch (err) {
+        console.error("Error DELETE Catálogo de Cuentas:", err);
+        res.status(500).json({ error: "Error al eliminar el registro en el Catálogo de Cuentas" });
+    }
+});
 
 
 
