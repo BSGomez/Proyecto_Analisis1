@@ -7,6 +7,7 @@ import Cuenta from "./pages/Cuenta";
 import Balance from "./pages/Balance";
 import Home from "./pages/Home";
 import CatalogoCuentas from "./pages/CatalogoCuentas";
+import LibroDiario from "./pages/LibroDiario";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/Balance" element={<Balance />} />
         <Route path="/Cuenta" element={<Cuenta />} />
         <Route path="/CatalogoCuentas" element={<CatalogoCuentas />} />
+        <Route path="/LibroDiario" element={<LibroDiario />} />
       </Routes>
       </BrowserRouter>
     </div>
