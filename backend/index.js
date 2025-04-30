@@ -346,11 +346,18 @@ app.post("/partidas", async (req, res) => {
             Fecha,
             Numero_Asiento,
             Descripcion,
-            ID_Usuario_Creacion,
-            ID_Tipo_Asiento,
-            ID_Poliza,
+            ID_Usuario_Creacion = null, // Valor por defecto
+            ID_Tipo_Asiento = null,     // Valor por defecto
+            ID_Poliza = null,           // Valor por defecto
             Detalles
         } = req.body;
+
+        // Validar que los datos principales no estén vacíos
+        if (!Fecha || !Numero_Asiento || !Descripcion || !Detalles || Detalles.length === 0) {
+            return res.status(400).json({ error: "Todos los campos principales son obligatorios y debe haber al menos un detalle." });
+        }
+
+        console.log("Datos recibidos para insertar partida:", req.body); // Log para depuración
 
         await transaction.begin();
 
@@ -372,17 +379,26 @@ app.post("/partidas", async (req, res) => {
 
         const ID_Partida = resultPartida.recordset[0].ID_Partida;
 
-        // Insertar detalles de partida — creando un nuevo request por cada detalle
-        for (const detalle of Detalles) {
-            const detalleRequest = new mssql.Request(transaction); // ← nuevo objeto por iteración
+        console.log("ID de la partida insertada:", ID_Partida); // Log para depuración
 
+        // Insertar detalles de partida
+        for (const detalle of Detalles) {
+            const { Cuenta, Debe, Haber, Descripcion: DetalleDescripcion, ID_Impuesto = null } = detalle;
+
+            if (!Cuenta || (Debe === undefined && Haber === undefined)) {
+                throw new Error(`El detalle debe tener una cuenta y al menos un valor en Debe o Haber. Detalle: ${JSON.stringify(detalle)}`);
+            }
+
+            console.log("Insertando detalle:", detalle); // Log para depuración
+
+            const detalleRequest = new mssql.Request(transaction);
             await detalleRequest
                 .input("ID_Partida", mssql.Int, ID_Partida)
-                .input("Cuenta", mssql.VarChar(50), detalle.Cuenta)
-                .input("Debe", mssql.Decimal(15, 2), detalle.Debe || 0)
-                .input("Haber", mssql.Decimal(15, 2), detalle.Haber || 0)
-                .input("Descripcion", mssql.VarChar(255), detalle.Descripcion || null)
-                .input("ID_Impuesto", mssql.Int, detalle.ID_Impuesto || null)
+                .input("Cuenta", mssql.VarChar(50), Cuenta)
+                .input("Debe", mssql.Decimal(15, 2), Debe)
+                .input("Haber", mssql.Decimal(15, 2), Haber)
+                .input("Descripcion", mssql.VarChar(255), DetalleDescripcion || null)
+                .input("ID_Impuesto", mssql.Int, ID_Impuesto)
                 .query(`
                     INSERT INTO Detalles_Partida (ID_Partida, Cuenta, Debe, Haber, Descripcion, ID_Impuesto)
                     VALUES (@ID_Partida, @Cuenta, @Debe, @Haber, @Descripcion, @ID_Impuesto);
@@ -391,10 +407,11 @@ app.post("/partidas", async (req, res) => {
 
         await transaction.commit();
 
+        console.log("Partida y detalles insertados correctamente."); // Log para depuración
         res.status(201).json({ message: "Partida y detalles insertados correctamente", ID_Partida });
     } catch (err) {
         await transaction.rollback();
-        console.error("Error al insertar la partida:", err);
+        console.error("Error al insertar la partida:", err); // Log del error
         res.status(500).json({ error: "Error al insertar la partida", details: err.message });
     }
 });
