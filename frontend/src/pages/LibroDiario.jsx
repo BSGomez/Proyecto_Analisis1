@@ -206,7 +206,7 @@ const LibroDiario = () => {
 
     setNuevaPartida({
       ID_Partida: partida.ID_Partida,
-      Fecha: partida.Fecha,
+      Fecha: partida.Fecha.split('T')[0], // Formatear la fecha para eliminar la parte de la hora
       Numero_Asiento: partida.Numero_Asiento,
       Descripcion: partida.Descripcion_Partida,
       Detalles: detallesProcesados, // Usar los detalles procesados
@@ -220,6 +220,10 @@ const LibroDiario = () => {
       ...prevState,
       [idPartida]: !prevState[idPartida], // Alternar visibilidad de los detalles
     }));
+  };
+
+  const formatFecha = (fecha) => {
+    return fecha ? fecha.split('T')[0] : ''; // Dividir la fecha por 'T' y tomar la primera parte
   };
 
   return (
@@ -251,7 +255,7 @@ const LibroDiario = () => {
               maxWidth: '600px',
             }}
           >
-            <h3>Fecha: {partida.Fecha}</h3>
+            <h3>Fecha: {formatFecha(partida.Fecha)}</h3> {/* Formatear la fecha */}
             <p><strong>Número de Asiento:</strong> {partida.Numero_Asiento}</p>
             <p><strong>Descripción:</strong> {partida.Descripcion_Partida}</p>
             <Button
