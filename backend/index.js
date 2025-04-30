@@ -426,34 +426,40 @@ app.get("/libro-diario", async (req, res) => {
                 p.Fecha, 
                 p.Numero_Asiento, 
                 p.Descripcion AS Descripcion_Partida,
-                -- Agrupando los detalles de la partida en un JSON
-                (
-                    SELECT 
-                        d.ID_Detalle, 
-                        d.Cuenta, 
-                        d.Debe, 
-                        d.Haber, 
-                        d.Descripcion AS Descripcion_Detalle
-                    FROM Detalles_Partida d
-                    WHERE d.ID_Partida = p.ID_Partida
-                    FOR XML PATH(''), TYPE
-                ).value('.', 'NVARCHAR(MAX)') AS Detalles
+                d.ID_Detalle,
+                d.Cuenta,
+                d.Debe,
+                d.Haber,
+                d.Descripcion AS Descripcion_Detalle
             FROM Partidas p
+            LEFT JOIN Detalles_Partida d ON p.ID_Partida = d.ID_Partida
             ORDER BY p.Fecha, p.Numero_Asiento;
         `);
 
-        // Procesar el resultado para convertir el XML en JSON
-        const resultSet = result.recordset.map(record => {
-            // Convierte el XML a un array de objetos
-            const detallesXML = record.Detalles;
-            if (detallesXML) {
-                // Aquí podrías convertir el XML a un array de objetos si es necesario
-                record.Detalles = detallesXML.replace(/<[^>]*>/g, '');
+        // Agrupar los detalles por partida
+        const partidas = {};
+        result.recordset.forEach(record => {
+            if (!partidas[record.ID_Partida]) {
+                partidas[record.ID_Partida] = {
+                    ID_Partida: record.ID_Partida,
+                    Fecha: record.Fecha,
+                    Numero_Asiento: record.Numero_Asiento,
+                    Descripcion_Partida: record.Descripcion_Partida,
+                    Detalles: []
+                };
             }
-            return record;
+            if (record.ID_Detalle) {
+                partidas[record.ID_Partida].Detalles.push({
+                    ID_Detalle: record.ID_Detalle,
+                    Cuenta: record.Cuenta,
+                    Debe: record.Debe,
+                    Haber: record.Haber,
+                    Descripcion: record.Descripcion_Detalle
+                });
+            }
         });
 
-        res.json(resultSet);
+        res.json(Object.values(partidas));
     } catch (err) {
         console.error("Error al obtener el libro diario:", err);
         res.status(500).json({ error: "Error al obtener el libro diario", details: err.message });

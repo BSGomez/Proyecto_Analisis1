@@ -26,11 +26,12 @@ const LibroDiario = () => {
   const [mostrarDialogo, setMostrarDialogo] = useState(false);
   const [editarPartida, setEditarPartida] = useState(false); // Estado para identificar si se está editando
   const [errores, setErrores] = useState({});
+  const [detallesVisibles, setDetallesVisibles] = useState({}); // Estado para controlar qué detalles están visibles
 
   const fetchPartidas = async () => {
     try {
       const response = await axios.get('http://localhost:8800/libro-diario');
-      setPartidas(Array.isArray(response.data) ? response.data : []);
+      setPartidas(response.data); // Asignar directamente las partidas con sus detalles
     } catch (error) {
       console.error('Error al obtener el libro diario:', error);
       setPartidas([]);
@@ -182,6 +183,13 @@ const LibroDiario = () => {
     setMostrarDialogo(true);
   };
 
+  const toggleDetalles = (idPartida) => {
+    setDetallesVisibles((prevState) => ({
+      ...prevState,
+      [idPartida]: !prevState[idPartida], // Alternar visibilidad de los detalles
+    }));
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <h1 style={{ textAlign: 'center' }}>Libro Diario</h1>
@@ -214,16 +222,26 @@ const LibroDiario = () => {
             <h3>Fecha: {partida.Fecha}</h3>
             <p><strong>Número de Asiento:</strong> {partida.Numero_Asiento}</p>
             <p><strong>Descripción:</strong> {partida.Descripcion_Partida}</p>
-            <DataTable
-              value={Array.isArray(partida.Detalles) ? partida.Detalles : []} // Asegurar que siempre sea un array
-              scrollable
-              scrollHeight="200px"
-            >
-              <Column field="Cuenta" header="Cuenta" />
-              <Column field="Debe" header="Debe" />
-              <Column field="Haber" header="Haber" />
-              <Column field="Descripcion" header="Descripción" />
-            </DataTable>
+            <Button
+              label={detallesVisibles[partida.ID_Partida] ? "Ocultar Detalles" : "Ver Detalles"}
+              icon={detallesVisibles[partida.ID_Partida] ? "pi pi-eye-slash" : "pi pi-eye"}
+              className="p-button p-button-secondary"
+              onClick={() => toggleDetalles(partida.ID_Partida)}
+              style={{ marginBottom: '10px' }}
+            />
+            {detallesVisibles[partida.ID_Partida] && (
+              <DataTable
+                value={Array.isArray(partida.Detalles) ? partida.Detalles : []} // Asegurar que siempre sea un array
+                scrollable
+                scrollHeight="200px"
+                emptyMessage="No hay detalles disponibles para esta partida." // Mensaje si no hay detalles
+              >
+                <Column field="Cuenta" header="Cuenta" />
+                <Column field="Debe" header="Debe" />
+                <Column field="Haber" header="Haber" />
+                <Column field="Descripcion" header="Descripción" />
+              </DataTable>
+            )}
             <div style={{ marginTop: '10px', textAlign: 'center' }}>
               <Button
                 label="Editar"
