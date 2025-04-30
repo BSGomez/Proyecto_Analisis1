@@ -23,6 +23,7 @@ const LibroDiario = () => {
     Haber: '',
     Descripcion: '',
   });
+  const [detalleSeleccionado, setDetalleSeleccionado] = useState(null); // Estado para el detalle seleccionado
   const [mostrarDialogo, setMostrarDialogo] = useState(false);
   const [editarPartida, setEditarPartida] = useState(false); // Estado para identificar si se está editando
   const [errores, setErrores] = useState({});
@@ -100,6 +101,37 @@ const LibroDiario = () => {
       Detalles: [...nuevaPartida.Detalles, detalle],
     });
     setDetalle({ Cuenta: '', Debe: 0, Haber: 0, Descripcion: '' });
+  };
+
+  const seleccionarDetalle = (detalle) => {
+    if (!detalle) {
+      setDetalleSeleccionado(null); // Si no hay detalle, limpiar la selección
+      setDetalle({ Cuenta: '', Debe: '', Haber: '', Descripcion: '' }); // Limpiar los campos del formulario
+      return;
+    }
+
+    setDetalleSeleccionado(detalle); // Guardar el detalle seleccionado
+    setDetalle({
+      Cuenta: detalle.Cuenta,
+      Debe: detalle.Debe,
+      Haber: detalle.Haber,
+      Descripcion: detalle.Descripcion,
+    }); // Llenar los campos del formulario con los datos del detalle seleccionado
+  };
+
+  const actualizarDetalle = () => {
+    if (!detalleSeleccionado) {
+      alert("Por favor, selecciona un detalle para editar.");
+      return;
+    }
+
+    const nuevosDetalles = nuevaPartida.Detalles.map((d) =>
+      d === detalleSeleccionado ? { ...detalle } : d
+    ); // Actualizar el detalle seleccionado con los nuevos datos
+
+    setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles });
+    setDetalleSeleccionado(null); // Limpiar la selección
+    setDetalle({ Cuenta: '', Debe: '', Haber: '', Descripcion: '' }); // Limpiar los campos del formulario
   };
 
   const calcularTotales = () => {
@@ -324,12 +356,29 @@ const LibroDiario = () => {
           />
         </div>
 
-        <DataTable value={nuevaPartida.Detalles} scrollable scrollHeight="200px">
+        <DataTable
+          value={nuevaPartida.Detalles}
+          scrollable
+          scrollHeight="200px"
+          selectionMode="single"
+          selection={detalleSeleccionado}
+          onSelectionChange={(e) => seleccionarDetalle(e.value)} // Seleccionar el detalle
+          emptyMessage="No hay detalles disponibles para esta partida."
+        >
           <Column field="Cuenta" header="Cuenta" />
           <Column field="Debe" header="Debe" />
           <Column field="Haber" header="Haber" />
           <Column field="Descripcion" header="Descripción" />
         </DataTable>
+
+        <div style={{ marginTop: '10px', textAlign: 'center' }}>
+          <Button
+            label="Actualizar Detalle"
+            icon="pi pi-save"
+            className="p-button p-button-primary"
+            onClick={actualizarDetalle} // Botón para actualizar el detalle
+          />
+        </div>
 
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <Button
