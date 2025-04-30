@@ -6,7 +6,7 @@ import { Dialog } from 'primereact/dialog';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
-import { Message } from 'primereact/message'; // Importar componente Message
+import { Message } from 'primereact/message';
 
 const LibroDiario = () => {
   const [partidas, setPartidas] = useState([]);
@@ -24,7 +24,8 @@ const LibroDiario = () => {
     Descripcion: '',
   });
   const [mostrarDialogo, setMostrarDialogo] = useState(false);
-  const [errores, setErrores] = useState({}); // Estado para almacenar errores
+  const [editarPartida, setEditarPartida] = useState(false); // Estado para identificar si se está editando
+  const [errores, setErrores] = useState({});
 
   const fetchPartidas = async () => {
     try {
@@ -38,8 +39,8 @@ const LibroDiario = () => {
 
   const fetchCuentas = async () => {
     try {
-      const response = await axios.get('http://localhost:8800/CatalogoCuentas'); // Cambiar al endpoint correcto
-      setCuentas(response.data.map(cuenta => ({ label: cuenta.Nombre_Cuenta, value: cuenta.Codigo_Cuenta }))); // Usar los campos de Catalogo_Cuenta
+      const response = await axios.get('http://localhost:8800/CatalogoCuentas');
+      setCuentas(response.data.map(cuenta => ({ label: cuenta.Nombre_Cuenta, value: cuenta.Codigo_Cuenta })));
     } catch (error) {
       console.error('Error al obtener las cuentas del catálogo:', error);
     }
@@ -58,7 +59,6 @@ const LibroDiario = () => {
   const handleDetalleChange = (e) => {
     const { name, value } = e.target;
 
-    // Validar que solo se permitan números en los campos Debe y Haber
     if ((name === 'Debe' || name === 'Haber') && isNaN(value)) {
       alert('Por favor, ingrese solo números en los campos Debe y Haber.');
       return;
@@ -119,24 +119,14 @@ const LibroDiario = () => {
     }
 
     try {
-      // Validar que todas las cuentas existan en el catálogo
-      const cuentasCatalogo = cuentas.map(cuenta => cuenta.value); // Obtener los códigos de las cuentas del catálogo
-      const cuentasInvalidas = nuevaPartida.Detalles.filter(detalle => !cuentasCatalogo.includes(detalle.Cuenta));
-
-      if (cuentasInvalidas.length > 0) {
-        alert(`Las siguientes cuentas no existen en el catálogo: ${cuentasInvalidas.map(c => c.Cuenta).join(', ')}. Por favor, agréguelas.`);
-        return;
-      }
-
-      // Validar y convertir los datos antes de enviarlos
       const partidaAEnviar = {
         ...nuevaPartida,
         Numero_Asiento: parseInt(nuevaPartida.Numero_Asiento, 10),
-        Fecha: /^\d{4}-\d{2}-\d{2}$/.test(nuevaPartida.Fecha) ? nuevaPartida.Fecha : null, // Validar formato de fecha
+        Fecha: /^\d{4}-\d{2}-\d{2}$/.test(nuevaPartida.Fecha) ? nuevaPartida.Fecha : null,
         Detalles: nuevaPartida.Detalles.map(detalle => ({
           ...detalle,
-          Debe: isNaN(parseFloat(detalle.Debe)) ? '0.00' : parseFloat(detalle.Debe).toFixed(2), // Convertir a número con dos decimales
-          Haber: isNaN(parseFloat(detalle.Haber)) ? '0.00' : parseFloat(detalle.Haber).toFixed(2), // Convertir a número con dos decimales
+          Debe: isNaN(parseFloat(detalle.Debe)) ? '0.00' : parseFloat(detalle.Debe).toFixed(2),
+          Haber: isNaN(parseFloat(detalle.Haber)) ? '0.00' : parseFloat(detalle.Haber).toFixed(2),
         })),
       };
 
@@ -145,17 +135,51 @@ const LibroDiario = () => {
         return;
       }
 
-      console.log("Datos enviados al backend:", partidaAEnviar); // Log para depuración
-      await axios.post('http://localhost:8800/partidas', partidaAEnviar);
-      alert('Partida guardada correctamente');
+      if (editarPartida) {
+        // Actualizar partida existente
+        await axios.put(`http://localhost:8800/partidas/${nuevaPartida.ID_Partida}`, partidaAEnviar);
+        alert('Partida actualizada correctamente');
+      } else {
+        // Crear nueva partida
+        await axios.post('http://localhost:8800/partidas', partidaAEnviar);
+        alert('Partida guardada correctamente');
+      }
+
       fetchPartidas();
       setNuevaPartida({ Fecha: '', Numero_Asiento: '', Descripcion: '', Detalles: [] });
       setMostrarDialogo(false);
+      setEditarPartida(false);
       setErrores({});
     } catch (error) {
-      console.error('Error al guardar la partida:', error.response?.data || error.message); // Mostrar detalles del error
+      console.error('Error al guardar la partida:', error.response?.data || error.message);
       alert('Error al guardar la partida');
     }
+  };
+
+  const editarPartidaExistente = (partida) => {
+    let detallesProcesados;
+
+    try {
+      // Verificar si Detalles es un string y convertirlo a un array si es necesario
+      detallesProcesados = typeof partida.Detalles === 'string'
+        ? JSON.parse(partida.Detalles)
+        : Array.isArray(partida.Detalles)
+        ? partida.Detalles
+        : [];
+    } catch (error) {
+      console.error('Error al procesar los detalles:', error);
+      detallesProcesados = []; // Si ocurre un error, inicializar como un array vacío
+    }
+
+    setNuevaPartida({
+      ID_Partida: partida.ID_Partida,
+      Fecha: partida.Fecha,
+      Numero_Asiento: partida.Numero_Asiento,
+      Descripcion: partida.Descripcion_Partida,
+      Detalles: detallesProcesados, // Usar los detalles procesados
+    });
+    setEditarPartida(true);
+    setMostrarDialogo(true);
   };
 
   return (
@@ -167,7 +191,11 @@ const LibroDiario = () => {
           label="Agregar Partida"
           icon="pi pi-plus"
           className="p-button p-button-success"
-          onClick={() => setMostrarDialogo(true)}
+          onClick={() => {
+            setNuevaPartida({ Fecha: '', Numero_Asiento: '', Descripcion: '', Detalles: [] });
+            setEditarPartida(false);
+            setMostrarDialogo(true);
+          }}
         />
       </div>
 
@@ -186,18 +214,30 @@ const LibroDiario = () => {
             <h3>Fecha: {partida.Fecha}</h3>
             <p><strong>Número de Asiento:</strong> {partida.Numero_Asiento}</p>
             <p><strong>Descripción:</strong> {partida.Descripcion_Partida}</p>
-            <DataTable value={Array.isArray(partida.Detalles) ? partida.Detalles : []} scrollable scrollHeight="200px">
+            <DataTable
+              value={Array.isArray(partida.Detalles) ? partida.Detalles : []} // Asegurar que siempre sea un array
+              scrollable
+              scrollHeight="200px"
+            >
               <Column field="Cuenta" header="Cuenta" />
               <Column field="Debe" header="Debe" />
               <Column field="Haber" header="Haber" />
               <Column field="Descripcion" header="Descripción" />
             </DataTable>
+            <div style={{ marginTop: '10px', textAlign: 'center' }}>
+              <Button
+                label="Editar"
+                icon="pi pi-pencil"
+                className="p-button p-button-warning"
+                onClick={() => editarPartidaExistente(partida)}
+              />
+            </div>
           </div>
         ))}
       </div>
 
       <Dialog
-        header="Agregar Partida"
+        header={editarPartida ? "Editar Partida" : "Agregar Partida"}
         visible={mostrarDialogo}
         style={{ width: '70vw', maxHeight: '90vh', overflowY: 'auto' }}
         onHide={() => setMostrarDialogo(false)}
@@ -235,7 +275,7 @@ const LibroDiario = () => {
           <Dropdown
             name="Cuenta"
             value={detalle.Cuenta}
-            options={cuentas} // Mostrar solo las cuentas del catálogo
+            options={cuentas}
             onChange={(e) => setDetalle({ ...detalle, Cuenta: e.value })}
             placeholder="Selecciona una cuenta"
             style={{ width: '200px' }}
@@ -275,7 +315,7 @@ const LibroDiario = () => {
 
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <Button
-            label="Guardar Partida"
+            label={editarPartida ? "Actualizar Partida" : "Guardar Partida"}
             icon="pi pi-save"
             className="p-button p-button-primary"
             onClick={guardarPartida}
