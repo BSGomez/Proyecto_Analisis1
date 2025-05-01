@@ -226,6 +226,21 @@ const LibroDiario = () => {
     return fecha ? fecha.split('T')[0] : ''; // Dividir la fecha por 'T' y tomar la primera parte
   };
 
+  const eliminarPartida = async (idPartida) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta partida?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`http://localhost:8800/partidas/${idPartida}`);
+      alert("Partida eliminada correctamente");
+      fetchPartidas(); // Recargar las partidas después de eliminar
+    } catch (error) {
+      console.error("Error al eliminar la partida:", error);
+      alert("Error al eliminar la partida");
+    }
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <h1 style={{ textAlign: 'center' }}>Libro Diario</h1>
@@ -284,6 +299,13 @@ const LibroDiario = () => {
                 icon="pi pi-pencil"
                 className="p-button p-button-warning"
                 onClick={() => editarPartidaExistente(partida)}
+                style={{ marginRight: '10px' }}
+              />
+              <Button
+                label="Eliminar"
+                icon="pi pi-trash"
+                className="p-button p-button-danger"
+                onClick={() => eliminarPartida(partida.ID_Partida)} // Llamar a la función eliminarPartida
               />
             </div>
           </div>
