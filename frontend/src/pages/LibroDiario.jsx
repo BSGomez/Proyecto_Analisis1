@@ -178,11 +178,9 @@ const LibroDiario = () => {
       }
 
       if (editarPartida) {
-        // Actualizar partida existente
         await axios.put(`http://localhost:8800/partidas/${nuevaPartida.ID_Partida}`, partidaAEnviar);
         alert('Partida actualizada correctamente');
       } else {
-        // Crear nueva partida
         await axios.post('http://localhost:8800/partidas', partidaAEnviar);
         alert('Partida guardada correctamente');
       }
@@ -194,7 +192,13 @@ const LibroDiario = () => {
       setErrores({});
     } catch (error) {
       console.error('Error al guardar la partida:', error.response?.data || error.message);
-      alert('Error al guardar la partida');
+
+      // Manejar error de clave duplicada
+      if (error.response?.data?.details?.includes('duplicate key')) {
+        alert('Error: Ya existe una partida con el mismo número de asiento. Por favor, utiliza un número diferente.');
+      } else {
+        alert('Error al guardar la partida. Por favor, intenta nuevamente.');
+      }
     }
   };
 
@@ -256,14 +260,19 @@ const LibroDiario = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1 style={{ textAlign: 'center' }}>Libro Diario</h1>
+    <div style={{ padding: '20px', backgroundColor: '#F2F3F4', color: '#170E11' }}>
+      <h1 style={{ textAlign: 'center', color: '#20709C' }}>Libro Diario</h1>
 
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Button
           label="Agregar Partida"
           icon="pi pi-plus"
           className="p-button p-button-success"
+          style={{
+            backgroundColor: '#20709C',
+            borderColor: '#20709C',
+            color: '#F2F3F4',
+          }}
           onClick={() => {
             setNuevaPartida({ Fecha: '', Numero_Asiento: '', Descripcion: '', Detalles: [] });
             setEditarPartida(false);
@@ -277,29 +286,37 @@ const LibroDiario = () => {
           <div
             key={partida.ID_Partida}
             style={{
-              border: '1px solid #ccc',
+              border: '1px solid #507592',
               borderRadius: '8px',
               padding: '15px',
+              backgroundColor: '#ACBFCE',
+              color: '#170E11',
               width: '100%',
               maxWidth: '600px',
             }}
           >
-            <h3>Fecha: {formatFecha(partida.Fecha)}</h3> {/* Formatear la fecha */}
+            <h3 style={{ color: '#20709C' }}>Fecha: {formatFecha(partida.Fecha)}</h3>
             <p><strong>Número de Asiento:</strong> {partida.Numero_Asiento}</p>
             <p><strong>Descripción:</strong> {partida.Descripcion_Partida}</p>
             <Button
               label={detallesVisibles[partida.ID_Partida] ? "Ocultar Detalles" : "Ver Detalles"}
               icon={detallesVisibles[partida.ID_Partida] ? "pi pi-eye-slash" : "pi pi-eye"}
               className="p-button p-button-secondary"
+              style={{
+                backgroundColor: '#507592',
+                borderColor: '#507592',
+                color: '#F2F3F4',
+                marginBottom: '10px',
+              }}
               onClick={() => toggleDetalles(partida.ID_Partida)}
-              style={{ marginBottom: '10px' }}
             />
             {detallesVisibles[partida.ID_Partida] && (
               <DataTable
-                value={Array.isArray(partida.Detalles) ? partida.Detalles : []} // Asegurar que siempre sea un array
+                value={Array.isArray(partida.Detalles) ? partida.Detalles : []}
                 scrollable
                 scrollHeight="200px"
-                emptyMessage="No hay detalles disponibles para esta partida." // Mensaje si no hay detalles
+                emptyMessage="No hay detalles disponibles para esta partida."
+                style={{ backgroundColor: '#F2F3F4', color: '#170E11' }}
               >
                 <Column field="Cuenta" header="Cuenta" body={(rowData) => obtenerNombreCuenta(rowData.Cuenta)} />
                 <Column field="Debe" header="Debe" />
@@ -312,14 +329,24 @@ const LibroDiario = () => {
                 label="Editar"
                 icon="pi pi-pencil"
                 className="p-button p-button-warning"
+                style={{
+                  backgroundColor: '#20709C',
+                  borderColor: '#20709C',
+                  color: '#F2F3F4',
+                  marginRight: '10px',
+                }}
                 onClick={() => editarPartidaExistente(partida)}
-                style={{ marginRight: '10px' }}
               />
               <Button
                 label="Eliminar"
                 icon="pi pi-trash"
                 className="p-button p-button-danger"
-                onClick={() => eliminarPartida(partida.ID_Partida)} // Llamar a la función eliminarPartida
+                style={{
+                  backgroundColor: '#507592',
+                  borderColor: '#507592',
+                  color: '#F2F3F4',
+                }}
+                onClick={() => eliminarPartida(partida.ID_Partida)}
               />
             </div>
           </div>
@@ -329,7 +356,13 @@ const LibroDiario = () => {
       <Dialog
         header={editarPartida ? "Editar Partida" : "Agregar Partida"}
         visible={mostrarDialogo}
-        style={{ width: '70vw', maxHeight: '90vh', overflowY: 'auto' }}
+        style={{
+          width: '70vw',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          backgroundColor: '#F2F3F4',
+          color: '#170E11',
+        }}
         onHide={() => setMostrarDialogo(false)}
       >
         <div style={{ marginBottom: '20px' }}>
@@ -338,7 +371,11 @@ const LibroDiario = () => {
             value={nuevaPartida.Fecha}
             onChange={handleChange}
             placeholder="Fecha"
-            style={{ marginBottom: '10px', width: '100%' }}
+            style={{
+              marginBottom: '10px',
+              width: '100%',
+              borderColor: '#507592',
+            }}
           />
           {errores.Fecha && <Message severity="error" text={errores.Fecha} />}
           <InputText
@@ -346,7 +383,11 @@ const LibroDiario = () => {
             value={nuevaPartida.Numero_Asiento}
             onChange={handleChange}
             placeholder="Número de Asiento"
-            style={{ marginBottom: '10px', width: '100%' }}
+            style={{
+              marginBottom: '10px',
+              width: '100%',
+              borderColor: '#507592',
+            }}
           />
           {errores.Numero_Asiento && <Message severity="error" text={errores.Numero_Asiento} />}
           <InputText
@@ -354,12 +395,16 @@ const LibroDiario = () => {
             value={nuevaPartida.Descripcion}
             onChange={handleChange}
             placeholder="Descripción"
-            style={{ marginBottom: '10px', width: '100%' }}
+            style={{
+              marginBottom: '10px',
+              width: '100%',
+              borderColor: '#507592',
+            }}
           />
           {errores.Descripcion && <Message severity="error" text={errores.Descripcion} />}
         </div>
 
-        <h3>Detalles</h3>
+        <h3 style={{ color: '#20709C' }}>Detalles</h3>
         {errores.Detalles && <Message severity="error" text={errores.Detalles} />}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
           <Dropdown
@@ -368,30 +413,41 @@ const LibroDiario = () => {
             options={cuentas}
             onChange={(e) => setDetalle({ ...detalle, Cuenta: e.value })}
             placeholder="Selecciona una cuenta"
-            style={{ width: '200px' }}
+            style={{
+              width: '200px',
+              borderColor: '#507592',
+            }}
           />
           <InputText
             name="Debe"
             value={detalle.Debe}
             onChange={handleDetalleChange}
             placeholder="Debe"
+            style={{ borderColor: '#507592' }}
           />
           <InputText
             name="Haber"
             value={detalle.Haber}
             onChange={handleDetalleChange}
             placeholder="Haber"
+            style={{ borderColor: '#507592' }}
           />
           <InputText
             name="Descripcion"
             value={detalle.Descripcion}
             onChange={handleDetalleChange}
             placeholder="Descripción"
+            style={{ borderColor: '#507592' }}
           />
           <Button
             label="Agregar Detalle"
             icon="pi pi-plus"
             className="p-button p-button-success"
+            style={{
+              backgroundColor: '#20709C',
+              borderColor: '#20709C',
+              color: '#F2F3F4',
+            }}
             onClick={agregarDetalle}
           />
         </div>
@@ -402,13 +458,14 @@ const LibroDiario = () => {
           scrollHeight="200px"
           selectionMode="single"
           selection={detalleSeleccionado}
-          onSelectionChange={(e) => seleccionarDetalle(e.value)} // Seleccionar el detalle
+          onSelectionChange={(e) => seleccionarDetalle(e.value)}
           emptyMessage="No hay detalles disponibles para esta partida."
+          style={{ backgroundColor: '#F2F3F4', color: '#170E11' }}
         >
           <Column
             field="Cuenta"
             header="Cuenta"
-            body={(rowData) => obtenerNombreCuenta(rowData.Cuenta)} // Mostrar código y nombre de la cuenta
+            body={(rowData) => obtenerNombreCuenta(rowData.Cuenta)}
           />
           <Column field="Debe" header="Debe" />
           <Column field="Haber" header="Haber" />
@@ -420,7 +477,12 @@ const LibroDiario = () => {
                 label="Eliminar"
                 icon="pi pi-trash"
                 className="p-button p-button-danger"
-                onClick={() => eliminarDetalle(rowData)} // Llamar a la función eliminarDetalle
+                style={{
+                  backgroundColor: '#507592',
+                  borderColor: '#507592',
+                  color: '#F2F3F4',
+                }}
+                onClick={() => eliminarDetalle(rowData)}
               />
             )}
           />
@@ -436,7 +498,12 @@ const LibroDiario = () => {
             label="Actualizar Detalle"
             icon="pi pi-save"
             className="p-button p-button-primary"
-            onClick={actualizarDetalle} // Botón para actualizar el detalle
+            style={{
+              backgroundColor: '#20709C',
+              borderColor: '#20709C',
+              color: '#F2F3F4',
+            }}
+            onClick={actualizarDetalle}
           />
         </div>
 
@@ -445,6 +512,11 @@ const LibroDiario = () => {
             label={editarPartida ? "Actualizar Partida" : "Guardar Partida"}
             icon="pi pi-save"
             className="p-button p-button-primary"
+            style={{
+              backgroundColor: '#20709C',
+              borderColor: '#20709C',
+              color: '#F2F3F4',
+            }}
             onClick={guardarPartida}
           />
         </div>
