@@ -521,6 +521,21 @@ const LibroDiario = () => {
           />
         </div>
       </Dialog>
+
+      <div style={{ marginTop: '20px', textAlign: 'center' }}>
+        <Button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          className="p-button p-button-primary"
+          style={{
+            backgroundColor: '#20709C',
+            borderColor: '#20709C',
+            color: '#F2F3F4',
+            marginTop: '10px',
+          }}
+          onClick={() => window.location.href = '/'}
+        />
+      </div>
     </div>
   );
 };
