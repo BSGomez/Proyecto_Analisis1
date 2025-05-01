@@ -134,6 +134,15 @@ const LibroDiario = () => {
     setDetalle({ Cuenta: '', Debe: '', Haber: '', Descripcion: '' }); // Limpiar los campos del formulario
   };
 
+  const eliminarDetalle = (detalle) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este detalle?")) {
+      return;
+    }
+
+    const nuevosDetalles = nuevaPartida.Detalles.filter((d) => d !== detalle); // Filtrar el detalle a eliminar
+    setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles }); // Actualizar los detalles
+  };
+
   const calcularTotales = () => {
     const totalDebe = nuevaPartida.Detalles.reduce((sum, d) => sum + parseFloat(d.Debe || 0), 0);
     const totalHaber = nuevaPartida.Detalles.reduce((sum, d) => sum + parseFloat(d.Haber || 0), 0);
@@ -241,6 +250,11 @@ const LibroDiario = () => {
     }
   };
 
+  const obtenerNombreCuenta = (codigoCuenta) => {
+    const cuenta = cuentas.find((c) => c.value === codigoCuenta);
+    return cuenta ? `${codigoCuenta} - ${cuenta.label}` : codigoCuenta; // Combinar código y nombre
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <h1 style={{ textAlign: 'center' }}>Libro Diario</h1>
@@ -287,7 +301,7 @@ const LibroDiario = () => {
                 scrollHeight="200px"
                 emptyMessage="No hay detalles disponibles para esta partida." // Mensaje si no hay detalles
               >
-                <Column field="Cuenta" header="Cuenta" />
+                <Column field="Cuenta" header="Cuenta" body={(rowData) => obtenerNombreCuenta(rowData.Cuenta)} />
                 <Column field="Debe" header="Debe" />
                 <Column field="Haber" header="Haber" />
                 <Column field="Descripcion" header="Descripción" />
@@ -391,10 +405,25 @@ const LibroDiario = () => {
           onSelectionChange={(e) => seleccionarDetalle(e.value)} // Seleccionar el detalle
           emptyMessage="No hay detalles disponibles para esta partida."
         >
-          <Column field="Cuenta" header="Cuenta" />
+          <Column
+            field="Cuenta"
+            header="Cuenta"
+            body={(rowData) => obtenerNombreCuenta(rowData.Cuenta)} // Mostrar código y nombre de la cuenta
+          />
           <Column field="Debe" header="Debe" />
           <Column field="Haber" header="Haber" />
           <Column field="Descripcion" header="Descripción" />
+          <Column
+            header="Acciones"
+            body={(rowData) => (
+              <Button
+                label="Eliminar"
+                icon="pi pi-trash"
+                className="p-button p-button-danger"
+                onClick={() => eliminarDetalle(rowData)} // Llamar a la función eliminarDetalle
+              />
+            )}
+          />
         </DataTable>
 
         <div style={{ marginTop: '10px', textAlign: 'center' }}>
