@@ -193,9 +193,9 @@ const LibroDiario = () => {
     } catch (error) {
       console.error('Error al guardar la partida:', error.response?.data || error.message);
 
-      // Manejar error de clave duplicada
-      if (error.response?.data?.details?.includes('duplicate key')) {
-        alert('Error: Ya existe una partida con el mismo número de asiento. Por favor, utiliza un número diferente.');
+      // Manejar error de validación de fecha
+      if (error.response?.data?.details?.includes('Invalid date')) {
+        alert('Error: La fecha ingresada no es válida. Por favor, utiliza el formato YYYY-MM-DD.');
       } else {
         alert('Error al guardar la partida. Por favor, intenta nuevamente.');
       }
