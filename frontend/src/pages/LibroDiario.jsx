@@ -427,6 +427,11 @@ const LibroDiario = () => {
         </DataTable>
 
         <div style={{ marginTop: '10px', textAlign: 'center' }}>
+          <p><strong>Total Debe:</strong> {calcularTotales().totalDebe.toFixed(2)}</p>
+          <p><strong>Total Haber:</strong> {calcularTotales().totalHaber.toFixed(2)}</p>
+        </div>
+
+        <div style={{ marginTop: '10px', textAlign: 'center' }}>
           <Button
             label="Actualizar Detalle"
             icon="pi pi-save"
