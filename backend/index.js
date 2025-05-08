@@ -352,6 +352,8 @@ app.post("/partidas", async (req, res) => {
             Detalles
         } = req.body;
 
+        console.log("Datos recibidos del frontend:", req.body); // Log para depuración
+
         // Validar que los datos principales no estén vacíos
         if (!Fecha || !Numero_Asiento || !Descripcion || !Detalles || Detalles.length === 0) {
             return res.status(400).json({ error: "Todos los campos principales son obligatorios y debe haber al menos un detalle." });

@@ -151,60 +151,58 @@ const LibroDiario = () => {
   };
 
   const guardarPartida = async () => {
+    console.log("guardarPartida function called"); // Log to confirm the function is triggered
+
     if (!validarCampos()) {
-      return;
+        console.log("Validation failed:", errores); // Log validation errors
+        return;
     }
 
     const { totalDebe, totalHaber } = calcularTotales();
+    console.log("Totales calculados:", { totalDebe, totalHaber }); // Log calculated totals
+
     if (totalDebe !== totalHaber) {
-      alert('El total del Debe y el Haber deben ser iguales.');
-      return;
+        alert('El total del Debe y el Haber deben ser iguales.');
+        console.log("Validation failed: Totals do not match");
+        return;
     }
 
     try {
-      const partidaAEnviar = {
-        ...nuevaPartida,
-        Numero_Asiento: parseInt(nuevaPartida.Numero_Asiento, 10),
-        Fecha: /^\d{4}-\d{2}-\d{2}$/.test(nuevaPartida.Fecha) ? nuevaPartida.Fecha : null,
-        Detalles: nuevaPartida.Detalles.map(detalle => ({
-          Cuenta: detalle.Cuenta,
-          Debe: isNaN(parseFloat(detalle.Debe)) ? 0 : parseFloat(detalle.Debe).toFixed(2),
-          Haber: isNaN(parseFloat(detalle.Haber)) ? 0 : parseFloat(detalle.Haber).toFixed(2),
-          Descripcion: detalle.Descripcion || '',
-        })),
-      };
+        const partidaAEnviar = {
+            Fecha: nuevaPartida.Fecha,
+            Numero_Asiento: parseInt(nuevaPartida.Numero_Asiento, 10),
+            Descripcion: nuevaPartida.Descripcion,
+            Detalles: nuevaPartida.Detalles.map(detalle => ({
+                Cuenta: detalle.Cuenta,
+                Debe: parseFloat(detalle.Debe) || 0,
+                Haber: parseFloat(detalle.Haber) || 0,
+                Descripcion: detalle.Descripcion || '',
+            })),
+        };
 
-      if (!partidaAEnviar.Fecha) {
-        alert('La fecha debe estar en formato YYYY-MM-DD.');
-        return;
-      }
+        console.log('Datos enviados al backend:', partidaAEnviar); // Log to confirm data structure
 
-      if (editarPartida) {
-        await axios.put(`http://localhost:8800/partidas/${nuevaPartida.ID_Partida}`, partidaAEnviar);
-        alert('Partida actualizada correctamente');
-      } else {
-        await axios.post('http://localhost:8800/partidas', partidaAEnviar);
-        alert('Partida guardada correctamente');
-      }
+        const response = editarPartida
+            ? await axios.put(`http://localhost:8800/partidas/${nuevaPartida.ID_Partida}`, partidaAEnviar)
+            : await axios.post('http://localhost:8800/partidas', partidaAEnviar);
 
-      fetchPartidas();
-      setNuevaPartida({ Fecha: '', Numero_Asiento: '', Descripcion: '', Detalles: [] });
-      setMostrarDialogo(false);
-      setEditarPartida(false);
-      setErrores({});
+        console.log('Respuesta del backend:', response.data); // Log backend response
+
+        if (response.status === 200 || response.status === 201) {
+            alert(editarPartida ? 'Partida actualizada correctamente' : 'Partida guardada correctamente');
+            fetchPartidas();
+            setNuevaPartida({ Fecha: '', Numero_Asiento: '', Descripcion: '', Detalles: [] });
+            setMostrarDialogo(false);
+            setEditarPartida(false);
+            setErrores({});
+        } else {
+            throw new Error('Error inesperado al guardar la partida.');
+        }
     } catch (error) {
-      console.error('Error al guardar la partida:', error.response?.data || error.message);
-
-      // Manejar errores específicos del backend
-      if (error.response?.data?.details?.includes('Invalid date')) {
-        alert('Error: La fecha ingresada no es válida. Por favor, utiliza el formato YYYY-MM-DD.');
-      } else if (error.response?.data?.details?.includes('Validation failed')) {
-        alert('Error: Algunos campos no cumplen con los requisitos. Por favor, verifica los datos ingresados.');
-      } else {
+        console.error('Error al guardar la partida:', error.response?.data || error.message);
         alert('Error al guardar la partida. Por favor, intenta nuevamente.');
-      }
     }
-  };
+};
 
   const editarPartidaExistente = (partida) => {
     let detallesProcesados;
@@ -387,17 +385,26 @@ const LibroDiario = () => {
             />
           </div>
 
-          {/* Segunda fila: Título y código de la partida */}
+          {/* Segunda fila: Fecha, Título y Código de la partida */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <InputText
-              name="Descripcion"
+              name="Fecha" // Ensure this matches the key in nuevaPartida
+              value={nuevaPartida.Fecha}
+              onChange={handleChange}
+              placeholder="Fecha (YYYY-MM-DD)"
+              style={{ width: '48%', borderColor: '#507592' }}
+            />
+            <InputText
+              name="Descripcion" // Ensure this matches the key in nuevaPartida
               value={nuevaPartida.Descripcion}
               onChange={handleChange}
               placeholder="Título de la Partida"
               style={{ width: '48%', borderColor: '#507592' }}
             />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <InputText
-              name="Numero_Asiento"
+              name="Numero_Asiento" // Ensure this matches the key in nuevaPartida
               value={nuevaPartida.Numero_Asiento}
               onChange={(e) => {
                 if (!isNaN(e.target.value)) {
@@ -406,11 +413,10 @@ const LibroDiario = () => {
                   alert('El número de asiento debe ser un número.');
                 }
               }}
-              placeholder="Código de la Partida"
+              placeholder="Número de Asiento"
               style={{ width: '48%', borderColor: '#507592' }}
             />
           </div>
-
           {/* Tercera fila: Encabezados de la tabla */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr', marginBottom: '10px', fontWeight: 'bold', color: '#170E11' }}>
             <div>Fecha</div>
