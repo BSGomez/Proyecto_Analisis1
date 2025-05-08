@@ -16,6 +16,7 @@ const LibroDiario = () => {
     Numero_Asiento: '',
     Descripcion: '',
     Detalles: [],
+    Nombre_Empresa: 'Nombre de la Empresa',
   });
   const [detalle, setDetalle] = useState({
     Cuenta: '',
@@ -28,7 +29,6 @@ const LibroDiario = () => {
   const [editarPartida, setEditarPartida] = useState(false); // Estado para identificar si se está editando
   const [errores, setErrores] = useState({});
   const [detallesVisibles, setDetallesVisibles] = useState({}); // Estado para controlar qué detalles están visibles
-  const [nombreEmpresa, setNombreEmpresa] = useState("Nombre de la Empresa");
 
   const fetchPartidas = async () => {
     try {
@@ -151,15 +151,15 @@ const LibroDiario = () => {
   };
 
   const guardarPartida = async () => {
-    console.log("guardarPartida function called"); // Log to confirm the function is triggered
+    console.log("guardarPartida function called");
 
     if (!validarCampos()) {
-        console.log("Validation failed:", errores); // Log validation errors
+        console.log("Validation failed:", errores);
         return;
     }
 
     const { totalDebe, totalHaber } = calcularTotales();
-    console.log("Totales calculados:", { totalDebe, totalHaber }); // Log calculated totals
+    console.log("Totales calculados:", { totalDebe, totalHaber });
 
     if (totalDebe !== totalHaber) {
         alert('El total del Debe y el Haber deben ser iguales.');
@@ -180,18 +180,29 @@ const LibroDiario = () => {
             })),
         };
 
-        console.log('Datos enviados al backend:', partidaAEnviar); // Log to confirm data structure
+        console.log('Datos enviados al backend:', partidaAEnviar);
 
         const response = editarPartida
             ? await axios.put(`http://localhost:8800/partidas/${nuevaPartida.ID_Partida}`, partidaAEnviar)
             : await axios.post('http://localhost:8800/partidas', partidaAEnviar);
 
-        console.log('Respuesta del backend:', response.data); // Log backend response
+        console.log('Respuesta del backend:', response.data);
 
         if (response.status === 200 || response.status === 201) {
             alert(editarPartida ? 'Partida actualizada correctamente' : 'Partida guardada correctamente');
-            fetchPartidas();
-            setNuevaPartida({ Fecha: '', Numero_Asiento: '', Descripcion: '', Detalles: [] });
+
+            // Update the partidas state locally to include Nombre_Empresa
+            const updatedPartidas = editarPartida
+                ? partidas.map(partida =>
+                    partida.ID_Partida === nuevaPartida.ID_Partida
+                        ? { ...partida, ...nuevaPartida }
+                        : partida
+                )
+                : [...partidas, { ...nuevaPartida, ID_Partida: response.data.ID_Partida }];
+
+            setPartidas(updatedPartidas);
+
+            setNuevaPartida({ Fecha: '', Numero_Asiento: '', Descripcion: '', Detalles: [], Nombre_Empresa: 'Nombre de la Empresa' });
             setMostrarDialogo(false);
             setEditarPartida(false);
             setErrores({});
@@ -225,6 +236,7 @@ const LibroDiario = () => {
       Numero_Asiento: partida.Numero_Asiento,
       Descripcion: partida.Descripcion_Partida,
       Detalles: detallesProcesados, // Usar los detalles procesados
+      Nombre_Empresa: partida.Nombre_Empresa || 'Nombre de la Empresa', // Ensure this is set locally
     });
     setEditarPartida(true);
     setMostrarDialogo(true);
@@ -276,7 +288,7 @@ const LibroDiario = () => {
             color: '#F2F3F4',
           }}
           onClick={() => {
-            setNuevaPartida({ Fecha: '', Numero_Asiento: '', Descripcion: '', Detalles: [] });
+            setNuevaPartida({ Fecha: '', Numero_Asiento: '', Descripcion: '', Detalles: [], Nombre_Empresa: 'Nombre de la Empresa' });
             setEditarPartida(false);
             setMostrarDialogo(true);
           }}
@@ -368,11 +380,12 @@ const LibroDiario = () => {
         onHide={() => setMostrarDialogo(false)}
       >
         <div style={{ padding: '10px', backgroundColor: '#FFFFFF', borderRadius: '8px' }}>
-          {/* Título editable de la empresa */}
+          {/* Nombre de la empresa */}
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <InputText
-              value={nombreEmpresa}
-              onChange={(e) => setNombreEmpresa(e.target.value)}
+              name="Nombre_Empresa"
+              value={nuevaPartida.Nombre_Empresa}
+              onChange={handleChange}
               style={{
                 textAlign: 'center',
                 fontSize: '20px',
