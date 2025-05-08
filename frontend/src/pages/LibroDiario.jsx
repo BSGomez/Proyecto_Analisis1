@@ -28,6 +28,7 @@ const LibroDiario = () => {
   const [editarPartida, setEditarPartida] = useState(false); // Estado para identificar si se está editando
   const [errores, setErrores] = useState({});
   const [detallesVisibles, setDetallesVisibles] = useState({}); // Estado para controlar qué detalles están visibles
+  const [nombreEmpresa, setNombreEmpresa] = useState("Nombre de la Empresa");
 
   const fetchPartidas = async () => {
     try {
@@ -166,9 +167,10 @@ const LibroDiario = () => {
         Numero_Asiento: parseInt(nuevaPartida.Numero_Asiento, 10),
         Fecha: /^\d{4}-\d{2}-\d{2}$/.test(nuevaPartida.Fecha) ? nuevaPartida.Fecha : null,
         Detalles: nuevaPartida.Detalles.map(detalle => ({
-          ...detalle,
-          Debe: isNaN(parseFloat(detalle.Debe)) ? '0.00' : parseFloat(detalle.Debe).toFixed(2),
-          Haber: isNaN(parseFloat(detalle.Haber)) ? '0.00' : parseFloat(detalle.Haber).toFixed(2),
+          Cuenta: detalle.Cuenta,
+          Debe: isNaN(parseFloat(detalle.Debe)) ? 0 : parseFloat(detalle.Debe).toFixed(2),
+          Haber: isNaN(parseFloat(detalle.Haber)) ? 0 : parseFloat(detalle.Haber).toFixed(2),
+          Descripcion: detalle.Descripcion || '',
         })),
       };
 
@@ -193,9 +195,11 @@ const LibroDiario = () => {
     } catch (error) {
       console.error('Error al guardar la partida:', error.response?.data || error.message);
 
-      // Manejar error de validación de fecha
+      // Manejar errores específicos del backend
       if (error.response?.data?.details?.includes('Invalid date')) {
         alert('Error: La fecha ingresada no es válida. Por favor, utiliza el formato YYYY-MM-DD.');
+      } else if (error.response?.data?.details?.includes('Validation failed')) {
+        alert('Error: Algunos campos no cumplen con los requisitos. Por favor, verifica los datos ingresados.');
       } else {
         alert('Error al guardar la partida. Por favor, intenta nuevamente.');
       }
@@ -357,7 +361,7 @@ const LibroDiario = () => {
         header={editarPartida ? "Editar Partida" : "Agregar Partida"}
         visible={mostrarDialogo}
         style={{
-          width: '70vw',
+          width: '80vw',
           maxHeight: '90vh',
           overflowY: 'auto',
           backgroundColor: '#F2F3F4',
@@ -365,160 +369,188 @@ const LibroDiario = () => {
         }}
         onHide={() => setMostrarDialogo(false)}
       >
-        <div style={{ marginBottom: '20px' }}>
-          <InputText
-            name="Fecha"
-            value={nuevaPartida.Fecha}
-            onChange={handleChange}
-            placeholder="Fecha"
-            style={{
-              marginBottom: '10px',
-              width: '100%',
-              borderColor: '#507592',
-            }}
-          />
-          {errores.Fecha && <Message severity="error" text={errores.Fecha} />}
-          <InputText
-            name="Numero_Asiento"
-            value={nuevaPartida.Numero_Asiento}
-            onChange={handleChange}
-            placeholder="Número de Asiento"
-            style={{
-              marginBottom: '10px',
-              width: '100%',
-              borderColor: '#507592',
-            }}
-          />
-          {errores.Numero_Asiento && <Message severity="error" text={errores.Numero_Asiento} />}
-          <InputText
-            name="Descripcion"
-            value={nuevaPartida.Descripcion}
-            onChange={handleChange}
-            placeholder="Descripción"
-            style={{
-              marginBottom: '10px',
-              width: '100%',
-              borderColor: '#507592',
-            }}
-          />
-          {errores.Descripcion && <Message severity="error" text={errores.Descripcion} />}
-        </div>
+        <div style={{ padding: '10px', backgroundColor: '#FFFFFF', borderRadius: '8px' }}>
+          {/* Título editable de la empresa */}
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <InputText
+              value={nombreEmpresa}
+              onChange={(e) => setNombreEmpresa(e.target.value)}
+              style={{
+                textAlign: 'center',
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#20709C',
+                border: 'none',
+                borderBottom: '2px solid #507592',
+                width: '100%',
+              }}
+            />
+          </div>
 
-        <h3 style={{ color: '#20709C' }}>Detalles</h3>
-        {errores.Detalles && <Message severity="error" text={errores.Detalles} />}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-          <Dropdown
-            name="Cuenta"
-            value={detalle.Cuenta}
-            options={cuentas}
-            onChange={(e) => setDetalle({ ...detalle, Cuenta: e.value })}
-            placeholder="Selecciona una cuenta"
-            style={{
-              width: '200px',
-              borderColor: '#507592',
-            }}
-          />
-          <InputText
-            name="Debe"
-            value={detalle.Debe}
-            onChange={handleDetalleChange}
-            placeholder="Debe"
-            style={{ borderColor: '#507592' }}
-          />
-          <InputText
-            name="Haber"
-            value={detalle.Haber}
-            onChange={handleDetalleChange}
-            placeholder="Haber"
-            style={{ borderColor: '#507592' }}
-          />
-          <InputText
-            name="Descripcion"
-            value={detalle.Descripcion}
-            onChange={handleDetalleChange}
-            placeholder="Descripción"
-            style={{ borderColor: '#507592' }}
-          />
-          <Button
-            label="Agregar Detalle"
-            icon="pi pi-plus"
-            className="p-button p-button-success"
-            style={{
-              backgroundColor: '#20709C',
-              borderColor: '#20709C',
-              color: '#F2F3F4',
-            }}
-            onClick={agregarDetalle}
-          />
-        </div>
+          {/* Segunda fila: Título y código de la partida */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <InputText
+              name="Descripcion"
+              value={nuevaPartida.Descripcion}
+              onChange={handleChange}
+              placeholder="Título de la Partida"
+              style={{ width: '48%', borderColor: '#507592' }}
+            />
+            <InputText
+              name="Numero_Asiento"
+              value={nuevaPartida.Numero_Asiento}
+              onChange={(e) => {
+                if (!isNaN(e.target.value)) {
+                  handleChange(e);
+                } else {
+                  alert('El número de asiento debe ser un número.');
+                }
+              }}
+              placeholder="Código de la Partida"
+              style={{ width: '48%', borderColor: '#507592' }}
+            />
+          </div>
 
-        <DataTable
-          value={nuevaPartida.Detalles}
-          scrollable
-          scrollHeight="200px"
-          selectionMode="single"
-          selection={detalleSeleccionado}
-          onSelectionChange={(e) => seleccionarDetalle(e.value)}
-          emptyMessage="No hay detalles disponibles para esta partida."
-          style={{ backgroundColor: '#F2F3F4', color: '#170E11' }}
-        >
-          <Column
-            field="Cuenta"
-            header="Cuenta"
-            body={(rowData) => obtenerNombreCuenta(rowData.Cuenta)}
-          />
-          <Column field="Debe" header="Debe" />
-          <Column field="Haber" header="Haber" />
-          <Column field="Descripcion" header="Descripción" />
-          <Column
-            header="Acciones"
-            body={(rowData) => (
-              <Button
-                label="Eliminar"
-                icon="pi pi-trash"
-                className="p-button p-button-danger"
-                style={{
-                  backgroundColor: '#507592',
-                  borderColor: '#507592',
-                  color: '#F2F3F4',
+          {/* Tercera fila: Encabezados de la tabla */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr', marginBottom: '10px', fontWeight: 'bold', color: '#170E11' }}>
+            <div>Fecha</div>
+            <div>Detalle</div>
+            <div>Debe</div>
+            <div>Haber</div>
+          </div>
+
+          {/* Filas dinámicas para los detalles */}
+          {nuevaPartida.Detalles.map((detalle, index) => (
+            <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr', marginBottom: '5px' }}>
+              <InputText
+                value={detalle.Fecha}
+                onChange={(e) => {
+                  const nuevosDetalles = [...nuevaPartida.Detalles];
+                  nuevosDetalles[index].Fecha = e.target.value;
+                  setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles });
                 }}
-                onClick={() => eliminarDetalle(rowData)}
+                placeholder="Fecha"
+                style={{ borderColor: '#507592' }}
               />
-            )}
-          />
-        </DataTable>
+              <Dropdown
+                value={detalle.Cuenta}
+                options={cuentas}
+                onChange={(e) => {
+                  const nuevosDetalles = [...nuevaPartida.Detalles];
+                  nuevosDetalles[index].Cuenta = e.value;
+                  setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles });
+                }}
+                placeholder="Selecciona una cuenta"
+                style={{ borderColor: '#507592' }}
+              />
+              <InputText
+                value={detalle.Debe}
+                onChange={(e) => {
+                  if (!isNaN(e.target.value)) {
+                    const nuevosDetalles = [...nuevaPartida.Detalles];
+                    nuevosDetalles[index].Debe = parseFloat(e.target.value) || 0;
+                    setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles });
+                  } else {
+                    alert('El campo Debe debe ser un número.');
+                  }
+                }}
+                placeholder="Debe"
+                style={{ borderColor: '#507592' }}
+              />
+              <InputText
+                value={detalle.Haber}
+                onChange={(e) => {
+                  if (!isNaN(e.target.value)) {
+                    const nuevosDetalles = [...nuevaPartida.Detalles];
+                    nuevosDetalles[index].Haber = parseFloat(e.target.value) || 0;
+                    setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles });
+                  } else {
+                    alert('El campo Haber debe ser un número.');
+                  }
+                }}
+                placeholder="Haber"
+                style={{ borderColor: '#507592' }}
+              />
+            </div>
+          ))}
 
-        <div style={{ marginTop: '10px', textAlign: 'center' }}>
-          <p><strong>Total Debe:</strong> {calcularTotales().totalDebe.toFixed(2)}</p>
-          <p><strong>Total Haber:</strong> {calcularTotales().totalHaber.toFixed(2)}</p>
-        </div>
+          {/* Botón para agregar una nueva fila */}
+          <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+            <Button
+              label="Agregar Fila"
+              icon="pi pi-plus"
+              className="p-button p-button-success"
+              style={{
+                backgroundColor: '#20709C',
+                borderColor: '#20709C',
+                color: '#F2F3F4',
+              }}
+              onClick={() => {
+                const nuevosDetalles = [...nuevaPartida.Detalles, { Fecha: '', Cuenta: '', Debe: 0, Haber: 0 }];
+                setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles });
+              }}
+            />
+          </div>
 
-        <div style={{ marginTop: '10px', textAlign: 'center' }}>
-          <Button
-            label="Actualizar Detalle"
-            icon="pi pi-save"
-            className="p-button p-button-primary"
-            style={{
-              backgroundColor: '#20709C',
-              borderColor: '#20709C',
-              color: '#F2F3F4',
-            }}
-            onClick={actualizarDetalle}
-          />
-        </div>
+          {/* Fila de totales */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr', fontWeight: 'bold', color: '#170E11', marginTop: '10px' }}>
+            <div></div>
+            <div style={{ textAlign: 'right' }}>Totales:</div>
+            <div>{calcularTotales().totalDebe.toFixed(2)}</div>
+            <div>{calcularTotales().totalHaber.toFixed(2)}</div>
+          </div>
 
-        <div style={{ marginTop: '20px', textAlign: 'center' }}>
-          <Button
-            label={editarPartida ? "Actualizar Partida" : "Guardar Partida"}
-            icon="pi pi-save"
-            className="p-button p-button-primary"
-            style={{
-              backgroundColor: '#20709C',
-              borderColor: '#20709C',
-              color: '#F2F3F4',
-            }}
-            onClick={guardarPartida}
-          />
+          {/* Botones de acción */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+            <Button
+              label="Guardar Partida"
+              icon="pi pi-save"
+              className="p-button p-button-primary"
+              style={{
+                backgroundColor: '#20709C',
+                borderColor: '#20709C',
+                color: '#F2F3F4',
+              }}
+              onClick={guardarPartida}
+            />
+            <Button
+              label="Borrar Fila"
+              icon="pi pi-trash"
+              className="p-button p-button-danger"
+              style={{
+                backgroundColor: '#ACBFCE',
+                borderColor: '#ACBFCE',
+                color: '#170E11',
+              }}
+              onClick={() => {
+                if (detalleSeleccionado !== null) {
+                  const nuevosDetalles = nuevaPartida.Detalles.filter((_, i) => i !== detalleSeleccionado);
+                  setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles });
+                  setDetalleSeleccionado(null);
+                } else {
+                  alert('Por favor selecciona una fila para borrar.');
+                }
+              }}
+            />
+            <Button
+              label="Editar Fila"
+              icon="pi pi-pencil"
+              className="p-button p-button-warning"
+              style={{
+                backgroundColor: '#507592',
+                borderColor: '#507592',
+                color: '#F2F3F4',
+              }}
+              onClick={() => {
+                if (detalleSeleccionado !== null) {
+                  const detalle = nuevaPartida.Detalles[detalleSeleccionado];
+                  setDetalle(detalle);
+                } else {
+                  alert('Por favor selecciona una fila para editar.');
+                }
+              }}
+            />
+          </div>
         </div>
       </Dialog>
 
