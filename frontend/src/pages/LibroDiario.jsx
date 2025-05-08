@@ -551,24 +551,6 @@ const LibroDiario = () => {
                 }
               }}
             />
-            <Button
-              label="Editar Fila"
-              icon="pi pi-pencil"
-              className="p-button p-button-warning"
-              style={{
-                backgroundColor: '#507592',
-                borderColor: '#507592',
-                color: '#F2F3F4',
-              }}
-              onClick={() => {
-                if (detalleSeleccionado !== null) {
-                  const detalle = nuevaPartida.Detalles[detalleSeleccionado];
-                  setDetalle(detalle);
-                } else {
-                  alert('Por favor selecciona una fila para editar.');
-                }
-              }}
-            />
           </div>
         </div>
       </Dialog>
