@@ -135,13 +135,22 @@ const LibroDiario = () => {
     setDetalle({ Cuenta: '', Debe: '', Haber: '', Descripcion: '' }); // Limpiar los campos del formulario
   };
 
-  const eliminarDetalle = (detalle) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este detalle?")) {
+  const eliminarDetalle = () => {
+    if (!detalleSeleccionado) {
+      alert("Por favor, selecciona una fila para eliminar.");
       return;
     }
 
-    const nuevosDetalles = nuevaPartida.Detalles.filter((d) => d !== detalle); // Filtrar el detalle a eliminar
-    setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles }); // Actualizar los detalles
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta fila?")) {
+      return;
+    }
+
+    // Filter out the selected row from the Detalles array
+    const nuevosDetalles = nuevaPartida.Detalles.filter(
+      (detalle) => detalle !== detalleSeleccionado
+    );
+    setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles });
+    setDetalleSeleccionado(null); // Clear the selection after deletion
   };
 
   const calcularTotales = () => {
@@ -440,7 +449,17 @@ const LibroDiario = () => {
 
           {/* Filas dinámicas para los detalles */}
           {nuevaPartida.Detalles.map((detalle, index) => (
-            <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr', marginBottom: '5px' }}>
+            <div
+              key={index}
+              onClick={() => setDetalleSeleccionado(detalle)} // Set the selected row on click
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 3fr 1fr 1fr',
+                marginBottom: '5px',
+                cursor: 'pointer',
+                backgroundColor: detalleSeleccionado === detalle ? '#D3E4F1' : 'transparent', // Highlight selected row
+              }}
+            >
               <InputText
                 value={detalle.Fecha}
                 onChange={(e) => {
@@ -533,7 +552,7 @@ const LibroDiario = () => {
               onClick={guardarPartida}
             />
             <Button
-              label="Borrar Fila"
+              label="Eliminar Fila"
               icon="pi pi-trash"
               className="p-button p-button-danger"
               style={{
@@ -541,15 +560,7 @@ const LibroDiario = () => {
                 borderColor: '#ACBFCE',
                 color: '#170E11',
               }}
-              onClick={() => {
-                if (detalleSeleccionado !== null) {
-                  const nuevosDetalles = nuevaPartida.Detalles.filter((_, i) => i !== detalleSeleccionado);
-                  setNuevaPartida({ ...nuevaPartida, Detalles: nuevosDetalles });
-                  setDetalleSeleccionado(null);
-                } else {
-                  alert('Por favor selecciona una fila para borrar.');
-                }
-              }}
+              onClick={eliminarDetalle} // Call the eliminarDetalle function
             />
           </div>
         </div>
