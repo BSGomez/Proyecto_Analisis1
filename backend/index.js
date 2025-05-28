@@ -10,9 +10,9 @@ app.use(express.json());
 app.use(cors());
 
 const dbConfig = {
-    user: "sa",
-    password: "1234",
-    database: "testAnalisis",
+    user: "Luis_Proyec",
+    password: "Eduardo1110",
+    database: "ContaDB",
     server: "127.0.0.1",
     options: {
         encrypt: true,
@@ -268,7 +268,7 @@ app.post("/CatalogoCuentas", async (req, res) => {
             .input("Tipo_Cuenta", mssql.VarChar(10), Tipo_Cuenta)
             .input(" Naturaleza_Cuenta", mssql.VarChar(10), Naturaleza_Cuenta)
             .query(`
-                INSERT INTO Catalogo_Cuenta
+                INSERT INTO Catalogo_Cuentas
                 (Codigo_Cuenta, Nombre_Cuenta, Nivel, Cuenta_Padre, Tipo_Cuenta, Naturaleza_Cuenta)
                 VALUES (@Codigo_Cuenta, @Nombre_Cuenta, @Nivel, @Cuenta_Padre, @Tipo_Cuenta, @Naturaleza_Cuenta);
             `);
@@ -400,7 +400,7 @@ app.post("/partidas", async (req, res) => {
                 .input("Descripcion", mssql.VarChar(255), DetalleDescripcion || null)
                 .input("ID_Impuesto", mssql.Int, ID_Impuesto)
                 .query(`
-                    INSERT INTO Detalles_Partida (ID_Partida, Cuenta, Debe, Haber, Descripcion, ID_Impuesto)
+                    INSERT INTO Detalle_Partida (ID_Partida, Cuenta, Debe, Haber, Descripcion, ID_Impuesto)
                     VALUES (@ID_Partida, @Cuenta, @Debe, @Haber, @Descripcion, @ID_Impuesto);
                 `);
         }
@@ -531,7 +531,7 @@ app.put("/partidas/:id", async (req, res) => {
         await requestEliminarDetalles
             .input("ID_Partida", mssql.Int, id)
             .query(`
-                DELETE FROM Detalles_Partida
+                DELETE FROM Detalle_Partida
                 WHERE ID_Partida = @ID_Partida;
             `);
 
@@ -559,7 +559,7 @@ app.put("/partidas/:id", async (req, res) => {
                 .input("Descripcion", mssql.VarChar(255), detalle.Descripcion || null)
                 .input("ID_Impuesto", mssql.Int, detalle.ID_Impuesto || null)
                 .query(`
-                    INSERT INTO Detalles_Partida (ID_Partida, Cuenta, Debe, Haber, Descripcion, ID_Impuesto)
+                    INSERT INTO Detalle_Partida (ID_Partida, Cuenta, Debe, Haber, Descripcion, ID_Impuesto)
                     VALUES (@ID_Partida, @Cuenta, @Debe, @Haber, @Descripcion, @ID_Impuesto);
                 `);
         }
@@ -573,11 +573,119 @@ app.put("/partidas/:id", async (req, res) => {
     }
 });
 
+// Endpoint para generar Estado de Resultados
+app.post("/estado-resultados", async (req, res) => {
+    const { Periodo_Inicio, Periodo_Fin } = req.body;
 
+    if (!Periodo_Inicio || !Periodo_Fin) {
+        return res.status(400).json({ error: "Periodo_Inicio y Periodo_Fin son requeridos." });
+    }
+
+    try {
+        const result = await pool.request()
+            .input("inicio", mssql.Date, Periodo_Inicio)
+            .input("fin", mssql.Date, Periodo_Fin)
+            .query(`
+                SELECT 
+                    c.Tipo_Cuenta,
+                    c.Naturaleza_Cuenta,
+                    dp.PDT_id_cuenta AS Cuenta,
+                    dp.PDT_debe AS Debe,
+                    dp.PDT_haber AS Haber
+                FROM Detalle_Partida dp
+                JOIN Partidas p ON dp.PDT_id_partida = p.PAR_id_partida
+                JOIN Catalogo_Cuentas c ON c.Codigo_Cuenta = CAST(dp.PDT_id_cuenta AS VARCHAR)
+                WHERE p.PAR_fecha BETWEEN @inicio AND @fin
+            `);
+
+        let ingresos = 0, costos = 0, gastos = 0;
+
+        for (const row of result.recordset) {
+            const monto = parseFloat(row.Debe || 0) - parseFloat(row.Haber || 0);
+            if (row.Tipo_Cuenta === "Ingreso") ingresos += row.Naturaleza_Cuenta === "Acreedora" ? -monto : monto;
+            if (row.Tipo_Cuenta === "Costo")   costos   += row.Naturaleza_Cuenta === "Deudora" ? monto : -monto;
+            if (row.Tipo_Cuenta === "Gasto")   gastos   += row.Naturaleza_Cuenta === "Deudora" ? monto : -monto;
+        }
+
+        const impuesto = ingresos > 0 ? ingresos * 0.05 : 0;
+        const resultado_neto = ingresos - costos - gastos - impuesto;
+
+        const insertEstado = await pool.request()
+            .input("Periodo_Inicio", mssql.Date, Periodo_Inicio)
+            .input("Periodo_Fin", mssql.Date, Periodo_Fin)
+            .input("Ingreso", mssql.Decimal(15, 2), ingresos)
+            .input("Costo_Venta", mssql.Decimal(15, 2), costos)
+            .input("Gasto_Operacion", mssql.Decimal(15, 2), gastos)
+            .input("Impuesto_Renta", mssql.Decimal(15, 2), impuesto)
+            .input("Resultado_Neto", mssql.Decimal(15, 2), resultado_neto)
+            .query(`
+                INSERT INTO Estado_Resultado 
+                (Periodo_Inicio, Periodo_Fin, Ingreso, Costo_Venta, Gasto_Operacion, Impuesto_Renta, Resultado_Neto, Fecha_Creacion)
+                OUTPUT INSERTED.ID_Estado_Resultado
+                VALUES (@Periodo_Inicio, @Periodo_Fin, @Ingreso, @Costo_Venta, @Gasto_Operacion, @Impuesto_Renta, @Resultado_Neto, GETDATE())
+            `);
+
+        const idEstado = insertEstado.recordset[0].ID_Estado_Resultado;
+        
+        for (const row of result.recordset) {
+            await pool.request()
+                .input("Id_Estado_Resultado", mssql.Int, idEstado)
+                .input("Codigo_Cuenta", mssql.VarChar(50), String(row.Cuenta))
+                .input("Valor", mssql.Decimal(15, 2), parseFloat(row.Debe) - parseFloat(row.Haber))
+                .input("Tipo_Rubro", mssql.VarChar(50), row.Tipo_Cuenta)
+                .query(`
+                    INSERT INTO Detalle_Estado_Resultados (Id_Estado_Resultado, Codigo_Cuenta, Valor, Tipo_Rubro)
+                    VALUES (@Id_Estado_Resultado, @Codigo_Cuenta, @Valor, @Tipo_Rubro)
+                `);
+        }
+        
+
+        res.status(201).json({ message: "Estado de resultados generado correctamente", ID_Estado_Resultado: idEstado });
+    } catch (err) {
+        console.error("Error al generar estado de resultados:", err);
+        res.status(500).json({ error: "Error al generar estado de resultados", details: err.message });
+    }
+});
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+app.get("/estado-resultados/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const resumen = await pool.request()
+            .input("ID_Estado_Resultado", mssql.Int, id)
+            .query(`
+                SELECT Periodo_Inicio, Periodo_Fin, Ingreso, Costo_Venta, Gasto_Operacion,
+                       Impuesto_Renta, Resultado_Neto, Fecha_Creacion
+                FROM Estado_Resultado
+                WHERE ID_Estado_Resultado = @ID_Estado_Resultado
+            `);
+
+        const detalles = await pool.request()
+            .input("ID_Estado_Resultado", mssql.Int, id)
+            .query(`
+                SELECT Codigo_Cuenta, Valor, Tipo_Rubro
+                FROM Detalle_Estado_Resultados
+                WHERE Id_Estado_Resultado = @ID_Estado_Resultado
+            `);
+
+        if (resumen.recordset.length === 0) {
+            return res.status(404).json({ error: "Estado de resultados no encontrado." });
+        }
+
+        res.json({
+            resumen: resumen.recordset[0],
+            detalles: detalles.recordset
+        });
+    } catch (err) {
+        console.error("Error al obtener estado de resultados:", err);
+        res.status(500).json({ error: "Error al obtener estado de resultados", details: err.message });
+    }
+});
 
 
 const PORT = 8800;
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-

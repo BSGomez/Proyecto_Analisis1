@@ -8,21 +8,24 @@ import Balance from "./pages/Balance";
 import Home from "./pages/Home";
 import CatalogoCuentas from "./pages/CatalogoCuentas";
 import LibroDiario from "./pages/LibroDiario";
+import EstadoResultados from "./pages/EstadoResultados"; // ⬅️ NUEVA LÍNEA
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/Balance" element={<Balance />} />
-        <Route path="/Cuenta" element={<Cuenta />} />
-        <Route path="/CatalogoCuentas" element={<CatalogoCuentas />} />
-        <Route path="/LibroDiario" element={<LibroDiario />} />
-      </Routes>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/Balance" element={<Balance />} />
+          <Route path="/Cuenta" element={<Cuenta />} />
+          <Route path="/CatalogoCuentas" element={<CatalogoCuentas />} />
+          <Route path="/LibroDiario" element={<LibroDiario />} />
+          <Route path="/EstadoResultados" element={<EstadoResultados />} /> {/* ⬅️ NUEVA RUTA */}
+        </Routes>
       </BrowserRouter>
     </div>
   );
 }
 
 export default App;
+

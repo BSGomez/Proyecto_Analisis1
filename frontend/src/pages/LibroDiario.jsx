@@ -39,12 +39,18 @@ const LibroDiario = () => {
     }
   };
 
-  const fetchCuentas = async () => {
+   // ✅ CORREGIDO: ahora consulta cuentaContable
+   const fetchCuentas = async () => {
     try {
-      const response = await axios.get('http://localhost:8800/CatalogoCuentas');
-      setCuentas(response.data.map(cuenta => ({ label: cuenta.Nombre_Cuenta, value: cuenta.Codigo_Cuenta })));
+      const response = await axios.get('http://localhost:8800/cuentaContable');
+      setCuentas(
+        response.data.map((cuenta) => ({
+          label: `${cuenta.CNT_codigo} - ${cuenta.CNT_nombre}`,
+          value: cuenta.CNT_id_cuenta,
+        }))
+      );
     } catch (error) {
-      console.error('Error al obtener las cuentas del catálogo:', error);
+      console.error('Error al obtener las cuentas:', error);
     }
   };
 

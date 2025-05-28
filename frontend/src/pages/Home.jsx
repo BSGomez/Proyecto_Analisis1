@@ -44,6 +44,17 @@ const Home = () => {
           }}
           onClick={() => window.location.href = '/LibroDiario'}
         />
+        <Button
+          label="Ver Estado de Resultados"
+          icon="pi pi-chart-line"
+          className="p-button p-button-primary p-button-lg"
+          style={{
+            backgroundColor: '#20709C',
+            borderColor: '#507592',
+            color: '#F2F3F4',
+          }}
+          onClick={() => window.location.href = '/EstadoResultados'}
+        />
       </div>
       <div style={{ marginTop: '20px', textAlign: 'center' }}>
         <Button
