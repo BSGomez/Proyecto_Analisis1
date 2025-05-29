@@ -235,57 +235,6 @@ app.delete("/cuentaContable/:id", async (req, res) => {
     }
 });
 
-// Crear una nueva partida contable
-app.post("/partida", async (req, res) => {
-    try {
-        if (!pool) {
-            return res.status(500).json({ error: "No hay conexión con la base de datos" });
-        }
-
-        const { PAR_id_partida, PAR_fecha, PAR_concepto } = req.body;
-
-        const result = await pool.request()
-            .input("PAR_id_partida", mssql.Int, PAR_id_partida)
-            .input("PAR_fecha", mssql.Date, PAR_fecha)
-            .input("PAR_concepto", mssql.VarChar, PAR_concepto)
-            .query(`
-                INSERT INTO Partidas (PAR_id_partida, PAR_fecha, PAR_concepto)
-                VALUES (@PAR_id_partida, @PAR_fecha, @PAR_concepto);
-            `);
-
-        res.status(201).json({ message: "Partida creada correctamente", data: result });
-    } catch (err) {
-        console.error("Error al crear partida:", err);
-        res.status(500).json({ error: "Error al crear partida", details: err.message });
-    }
-});
-
-// Insertar un detalle de partida (movimiento)
-app.post("/partidaDetalle", async (req, res) => {
-    try {
-        if (!pool) {
-            return res.status(500).json({ error: "No hay conexión con la base de datos" });
-        }
-
-        const { PDT_id_detalle, PDT_id_partida, PDT_id_cuenta, PDT_debe, PDT_haber } = req.body;
-
-        const result = await pool.request()
-            .input("PDT_id_detalle", mssql.Int, PDT_id_detalle)
-            .input("PDT_id_partida", mssql.Int, PDT_id_partida)
-            .input("PDT_id_cuenta", mssql.Int, PDT_id_cuenta)
-            .input("PDT_debe", mssql.Float, PDT_debe)
-            .input("PDT_haber", mssql.Float, PDT_haber)
-            .query(`
-                INSERT INTO Detalle_Partida (PDT_id_detalle, PDT_id_partida, PDT_id_cuenta, PDT_debe, PDT_haber)
-                VALUES (@PDT_id_detalle, @PDT_id_partida, @PDT_id_cuenta, @PDT_debe, @PDT_haber);
-            `);
-
-        res.status(201).json({ message: "Detalle insertado correctamente", data: result });
-    } catch (err) {
-        console.error("Error al crear detalle de partida:", err);
-        res.status(500).json({ error: "Error al crear detalle de partida", details: err.message });
-    }
-});
 
 //CATALOGO DE CUENTAS   
 // Obtener todas las cuentas del catálogo
@@ -386,6 +335,246 @@ app.delete("/CatalogoCuentas/:id", async (req, res) => {
         res.status(500).json({ error: "Error al eliminar el registro en el Catálogo de Cuentas" });
     }
 });
+
+
+// Método POST para insertar una nueva partida y sus detalles
+app.post("/partidas", async (req, res) => {
+    const transaction = new mssql.Transaction(pool);
+
+    try {
+        const {
+            Fecha,
+            Numero_Asiento,
+            Descripcion,
+            ID_Usuario_Creacion = null, // Valor por defecto
+            ID_Tipo_Asiento = null,     // Valor por defecto
+            ID_Poliza = null,           // Valor por defecto
+            Detalles
+        } = req.body;
+
+        console.log("Datos recibidos del frontend:", req.body); // Log para depuración
+
+        // Validar que los datos principales no estén vacíos
+        if (!Fecha || !Numero_Asiento || !Descripcion || !Detalles || Detalles.length === 0) {
+            return res.status(400).json({ error: "Todos los campos principales son obligatorios y debe haber al menos un detalle." });
+        }
+
+        console.log("Datos recibidos para insertar partida:", req.body); // Log para depuración
+
+        await transaction.begin();
+
+        const request = new mssql.Request(transaction);
+
+        // Insertar la partida
+        const resultPartida = await request
+            .input("Fecha", mssql.Date, Fecha)
+            .input("Numero_Asiento", mssql.Int, Numero_Asiento)
+            .input("Descripcion", mssql.VarChar(255), Descripcion)
+            .input("ID_Usuario_Creacion", mssql.Int, ID_Usuario_Creacion)
+            .input("ID_Tipo_Asiento", mssql.Int, ID_Tipo_Asiento)
+            .input("ID_Poliza", mssql.Int, ID_Poliza)
+            .query(`
+                INSERT INTO Partidas (Fecha, Numero_Asiento, Descripcion, ID_Usuario_Creacion, ID_Tipo_Asiento, ID_Poliza)
+                OUTPUT INSERTED.ID_Partida
+                VALUES (@Fecha, @Numero_Asiento, @Descripcion, @ID_Usuario_Creacion, @ID_Tipo_Asiento, @ID_Poliza);
+            `);
+
+        const ID_Partida = resultPartida.recordset[0].ID_Partida;
+
+        console.log("ID de la partida insertada:", ID_Partida); // Log para depuración
+
+        // Insertar detalles de partida
+        for (const detalle of Detalles) {
+            const { Cuenta, Debe, Haber, Descripcion: DetalleDescripcion, ID_Impuesto = null } = detalle;
+
+            if (!Cuenta || (Debe === undefined && Haber === undefined)) {
+                throw new Error(`El detalle debe tener una cuenta y al menos un valor en Debe o Haber. Detalle: ${JSON.stringify(detalle)}`);
+            }
+
+            console.log("Insertando detalle:", detalle); // Log para depuración
+
+            const detalleRequest = new mssql.Request(transaction);
+            await detalleRequest
+                .input("ID_Partida", mssql.Int, ID_Partida)
+                .input("Cuenta", mssql.VarChar(50), Cuenta)
+                .input("Debe", mssql.Decimal(15, 2), Debe)
+                .input("Haber", mssql.Decimal(15, 2), Haber)
+                .input("Descripcion", mssql.VarChar(255), DetalleDescripcion || null)
+                .input("ID_Impuesto", mssql.Int, ID_Impuesto)
+                .query(`
+                    INSERT INTO Detalles_Partida (ID_Partida, Cuenta, Debe, Haber, Descripcion, ID_Impuesto)
+                    VALUES (@ID_Partida, @Cuenta, @Debe, @Haber, @Descripcion, @ID_Impuesto);
+                `);
+        }
+
+        await transaction.commit();
+
+        console.log("Partida y detalles insertados correctamente."); // Log para depuración
+        res.status(201).json({ message: "Partida y detalles insertados correctamente", ID_Partida });
+    } catch (err) {
+        await transaction.rollback();
+        console.error("Error al insertar la partida:", err); // Log del error
+        res.status(500).json({ error: "Error al insertar la partida", details: err.message });
+    }
+});
+
+
+// Método GET para obtener todas las partidas tomando en cuenta que estan relacionadas las tablas partidas y detalles de partida
+app.get("/libro-diario", async (req, res) => {
+    try {
+        const result = await pool.request().query(`
+            SELECT 
+                p.ID_Partida, 
+                p.Fecha, 
+                p.Numero_Asiento, 
+                p.Descripcion AS Descripcion_Partida,
+                d.ID_Detalle,
+                d.Cuenta,
+                d.Debe,
+                d.Haber,
+                d.Descripcion AS Descripcion_Detalle
+            FROM Partidas p
+            LEFT JOIN Detalles_Partida d ON p.ID_Partida = d.ID_Partida
+            ORDER BY p.Fecha, p.Numero_Asiento;
+        `);
+
+        // Agrupar los detalles por partida
+        const partidas = {};
+        result.recordset.forEach(record => {
+            if (!partidas[record.ID_Partida]) {
+                partidas[record.ID_Partida] = {
+                    ID_Partida: record.ID_Partida,
+                    Fecha: record.Fecha,
+                    Numero_Asiento: record.Numero_Asiento,
+                    Descripcion_Partida: record.Descripcion_Partida,
+                    Detalles: []
+                };
+            }
+            if (record.ID_Detalle) {
+                partidas[record.ID_Partida].Detalles.push({
+                    ID_Detalle: record.ID_Detalle,
+                    Cuenta: record.Cuenta,
+                    Debe: record.Debe,
+                    Haber: record.Haber,
+                    Descripcion: record.Descripcion_Detalle
+                });
+            }
+        });
+
+        res.json(Object.values(partidas));
+    } catch (err) {
+        console.error("Error al obtener el libro diario:", err);
+        res.status(500).json({ error: "Error al obtener el libro diario", details: err.message });
+    }
+});
+
+// Método DELETE para eliminar una partida y sus detalles
+app.delete("/partidas/:id", async (req, res) => {
+    const transaction = new mssql.Transaction(pool);
+
+    try {
+        const { id } = req.params;  // Obtenemos el ID de la partida desde los parámetros
+
+        await transaction.begin();
+
+        // Crear un nuevo request para eliminar los detalles de la partida
+        const requestDetalles = new mssql.Request(transaction);
+        await requestDetalles
+            .input("ID_Partida", mssql.Int, id)  // Declaramos el parámetro solo para esta consulta
+            .query(`
+                DELETE FROM Detalles_Partida WHERE ID_Partida = @ID_Partida;
+            `);
+
+        // Crear un nuevo request para eliminar la partida principal
+        const requestPartida = new mssql.Request(transaction);
+        await requestPartida
+            .input("ID_Partida", mssql.Int, id)  // Declaramos el parámetro solo para esta consulta
+            .query(`
+                DELETE FROM Partidas WHERE ID_Partida = @ID_Partida;
+            `);
+
+        await transaction.commit();
+
+        res.status(200).json({ message: "Partida y detalles eliminados correctamente." });
+    } catch (err) {
+        await transaction.rollback();
+        console.error("Error al eliminar la partida:", err);
+        res.status(500).json({ error: "Error al eliminar la partida", details: err.message });
+    }
+});
+
+
+
+// Método UPDATE para actualizar una partida y sus detalles
+app.put("/partidas/:id", async (req, res) => {
+    const transaction = new mssql.Transaction(pool);
+
+    try {
+        const { id } = req.params;
+        const { Fecha, Numero_Asiento, Descripcion, Detalles } = req.body;
+
+        await transaction.begin();
+
+        // Crear un nuevo request para actualizar la partida
+        const requestPartida = new mssql.Request(transaction);
+        await requestPartida
+            .input("ID_Partida", mssql.Int, id)
+            .input("Fecha", mssql.Date, Fecha)
+            .input("Numero_Asiento", mssql.Int, Numero_Asiento)
+            .input("Descripcion", mssql.VarChar(255), Descripcion)
+            .query(`
+                UPDATE Partidas
+                SET Fecha = @Fecha, Numero_Asiento = @Numero_Asiento, Descripcion = @Descripcion
+                WHERE ID_Partida = @ID_Partida;
+            `);
+
+        // Crear un nuevo request para eliminar los detalles actuales
+        const requestEliminarDetalles = new mssql.Request(transaction);
+        await requestEliminarDetalles
+            .input("ID_Partida", mssql.Int, id)
+            .query(`
+                DELETE FROM Detalles_Partida
+                WHERE ID_Partida = @ID_Partida;
+            `);
+
+        // Validar e insertar los nuevos detalles
+        for (const detalle of Detalles) {
+            // Validar que la cuenta exista en Catalogo_Cuentas
+            const requestValidarCuenta = new mssql.Request(transaction);
+            const resultValidacion = await requestValidarCuenta
+                .input("Cuenta", mssql.VarChar(50), detalle.Cuenta)
+                .query(`
+                    SELECT Codigo_Cuenta FROM Catalogo_Cuentas WHERE Codigo_Cuenta = @Cuenta;
+                `);
+
+            if (resultValidacion.recordset.length === 0) {
+                throw new Error(`La cuenta '${detalle.Cuenta}' no existe en el catálogo de cuentas.`);
+            }
+
+            // Insertar el detalle
+            const requestDetalle = new mssql.Request(transaction); // Crear un nuevo request para cada detalle
+            await requestDetalle
+                .input("ID_Partida", mssql.Int, id)
+                .input("Cuenta", mssql.VarChar(50), detalle.Cuenta)
+                .input("Debe", mssql.Decimal(15, 2), detalle.Debe || 0)
+                .input("Haber", mssql.Decimal(15, 2), detalle.Haber || 0)
+                .input("Descripcion", mssql.VarChar(255), detalle.Descripcion || null)
+                .input("ID_Impuesto", mssql.Int, detalle.ID_Impuesto || null)
+                .query(`
+                    INSERT INTO Detalles_Partida (ID_Partida, Cuenta, Debe, Haber, Descripcion, ID_Impuesto)
+                    VALUES (@ID_Partida, @Cuenta, @Debe, @Haber, @Descripcion, @ID_Impuesto);
+                `);
+        }
+
+        await transaction.commit();
+        res.status(200).json({ message: "Partida y detalles actualizados correctamente." });
+    } catch (err) {
+        await transaction.rollback();
+        console.error("Error al actualizar la partida:", err);
+        res.status(500).json({ error: "Error al actualizar la partida", details: err.message });
+    }
+});
+
 
 
 

@@ -116,11 +116,11 @@ const Cuenta = () => {
   };
 
   return (
-    <div>
-      <h1><center>Cuenta Contable</center></h1>
+    <div style={{ backgroundColor: '#F2F3F4', color: '#170E11', padding: '20px' }}>
+      <h1 style={{ textAlign: 'center', color: '#20709C' }}>Cuenta Contable</h1>
 
       {loading && (
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px', color: '#507592' }}>
           <p>Cargando datos...</p>
         </div>
       )}
@@ -133,7 +133,15 @@ const Cuenta = () => {
 
       {!loading && !error && (
         <div className="Cuenta">
-          <DataTable value={cuentas} paginator rows={10} responsiveLayout="scroll" selectionMode="single" onSelectionChange={(e) => handleEdit(e.value)}>
+          <DataTable
+            value={cuentas}
+            paginator
+            rows={10}
+            responsiveLayout="scroll"
+            selectionMode="single"
+            onSelectionChange={(e) => handleEdit(e.value)}
+            style={{ backgroundColor: '#F2F3F4', color: '#170E11' }}
+          >
             <Column field="CNT_id_cuenta" header="ID" sortable></Column>
             <Column field="CNT_codigo" header="Código" sortable></Column>
             <Column field="CNT_nombre" header="Nombre" sortable></Column>
@@ -147,34 +155,65 @@ const Cuenta = () => {
       <br />
       <div className="form-Box" style={{ marginTop: '20px', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <div className="card flex justify-content-center">
-            <InputText value={datos.CNT_id_cuenta} name="CNT_id_cuenta" onChange={handleChange} placeholder="ID Cuenta" />
-          </div>
-          <div className="card flex justify-content-center">
-            <InputText value={datos.CNT_codigo} name="CNT_codigo" onChange={handleChange} placeholder="Código" />
-          </div>
-          <div className="card flex justify-content-center">
-            <InputText value={datos.CNT_nombre} name="CNT_nombre" onChange={handleChange} placeholder="Nombre" />
-          </div>
-          <div className="card flex justify-content-center">
-            <InputText value={datos.CNT_tipo} name="CNT_tipo" onChange={handleChange} placeholder="Tipo" />
-          </div>
-          <div className="card flex justify-content-center">
-            <InputText value={datos.CNT_nivel} name="CNT_nivel" onChange={handleChange} placeholder="Nivel" />
-          </div>
-          <div className="card flex justify-content-center">
-            <InputText value={datos.CNT_id_padre} name="CNT_id_padre" onChange={handleChange} placeholder="ID Padre" />
-          </div>
+          <InputText value={datos.CNT_id_cuenta} name="CNT_id_cuenta" onChange={handleChange} placeholder="ID Cuenta" style={{ borderColor: '#507592' }} />
+          <InputText value={datos.CNT_codigo} name="CNT_codigo" onChange={handleChange} placeholder="Código" style={{ borderColor: '#507592' }} />
+          <InputText value={datos.CNT_nombre} name="CNT_nombre" onChange={handleChange} placeholder="Nombre" style={{ borderColor: '#507592' }} />
+          <InputText value={datos.CNT_tipo} name="CNT_tipo" onChange={handleChange} placeholder="Tipo" style={{ borderColor: '#507592' }} />
+          <InputText value={datos.CNT_nivel} name="CNT_nivel" onChange={handleChange} placeholder="Nivel" style={{ borderColor: '#507592' }} />
+          <InputText value={datos.CNT_id_padre} name="CNT_id_padre" onChange={handleChange} placeholder="ID Padre" style={{ borderColor: '#507592' }} />
         </div>
       </div>
       <br />
 
       <div className="buttons" style={{ marginTop: '20px', textAlign: 'center' }}>
-        <Button label="Agregar" icon="pi pi-plus" className="p-button p-button-primary" onClick={enviarDatos} />
-        <Button label="Modificar" icon="pi pi-pencil" className="p-button p-button-primary" onClick={modificarDatos} style={{ marginLeft: '10px' }} />
-        <Button label="Eliminar" icon="pi pi-trash" className="p-button p-button-primary" onClick={() => eliminarDatos(datos.CNT_id_cuenta)} style={{ marginLeft: '10px' }} />
+        <Button
+          label="Agregar"
+          icon="pi pi-plus"
+          className="p-button p-button-primary"
+          style={{
+            backgroundColor: '#20709C',
+            borderColor: '#20709C',
+            color: '#F2F3F4',
+          }}
+          onClick={enviarDatos}
+        />
+        <Button
+          label="Modificar"
+          icon="pi pi-pencil"
+          className="p-button p-button-primary"
+          style={{
+            backgroundColor: '#507592',
+            borderColor: '#507592',
+            color: '#F2F3F4',
+            marginLeft: '10px',
+          }}
+          onClick={modificarDatos}
+        />
+        <Button
+          label="Eliminar"
+          icon="pi pi-trash"
+          className="p-button p-button-primary"
+          style={{
+            backgroundColor: '#ACBFCE',
+            borderColor: '#ACBFCE',
+            color: '#170E11',
+            marginLeft: '10px',
+          }}
+          onClick={() => eliminarDatos(datos.CNT_id_cuenta)}
+        />
         <br />
-        <Button label="Volver" icon="pi pi-arrow-left" className="p-button p-button-primary" onClick={() => window.location.href = '/'} style={{ marginTop: '10px' }} />
+        <Button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          className="p-button p-button-primary"
+          style={{
+            backgroundColor: '#20709C',
+            borderColor: '#20709C',
+            color: '#F2F3F4',
+            marginTop: '10px',
+          }}
+          onClick={() => window.location.href = '/'}
+        />
       </div>
     </div>
   );

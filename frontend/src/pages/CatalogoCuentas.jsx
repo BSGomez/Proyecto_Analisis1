@@ -93,20 +93,20 @@ const CatalogoCuentas = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Catálogo de Cuentas</h1>
+    <div style={{ ...styles.container, backgroundColor: '#F2F3F4', color: '#170E11' }}>
+      <h1 style={{ ...styles.title, color: '#20709C' }}>Catálogo de Cuentas</h1>
 
       <div style={styles.topButtons}>
         <Button
           className="p-button-info"
           label="Buscar Cuenta"
-          style={{ backgroundColor: '#507592', borderColor: '#507592', color: '#fff' }}
+          style={{ backgroundColor: '#507592', borderColor: '#507592', color: '#F2F3F4' }}
         />
         <Button
           className="p-button-success"
           label="Nueva Cuenta"
           onClick={agregarCuenta}
-          style={{ backgroundColor: '#507592', borderColor: '#507592', color: '#fff' }}
+          style={{ backgroundColor: '#20709C', borderColor: '#20709C', color: '#F2F3F4' }}
         />
       </div>
 
@@ -115,7 +115,7 @@ const CatalogoCuentas = () => {
           value={cuentas}
           scrollable
           scrollHeight="400px"
-          style={{ minWidth: '50rem' }}
+          style={{ minWidth: '50rem', backgroundColor: '#F2F3F4', color: '#170E11' }}
           selectionMode="single"
           onSelectionChange={(e) => setDatos(e.value)}
         >
@@ -132,12 +132,22 @@ const CatalogoCuentas = () => {
                   className="p-button-warning"
                   label="Editar"
                   onClick={() => console.log("Editar cuenta", rowData)}
-                  style={{ marginRight: '5px' }}
+                  style={{
+                    backgroundColor: '#20709C',
+                    borderColor: '#20709C',
+                    color: '#F2F3F4',
+                    marginRight: '5px',
+                  }}
                 />
                 <Button
                   className="p-button-danger"
                   label="Eliminar"
                   onClick={() => console.log("Eliminar cuenta", rowData.Codigo_Cuenta)}
+                  style={{
+                    backgroundColor: '#507592',
+                    borderColor: '#507592',
+                    color: '#F2F3F4',
+                  }}
                 />
               </>
             )}
@@ -147,13 +157,28 @@ const CatalogoCuentas = () => {
 
       <div style={styles.formBox}>
         <div style={styles.inputContainer}>
-          <InputText name="Codigo_Cuenta" value={datos.Codigo_Cuenta} onChange={handleChange} placeholder="Código de Cuenta" />
-          <InputText name="Nombre_Cuenta" value={datos.Nombre_Cuenta} onChange={handleChange} placeholder="Nombre de Cuenta" />
-          <InputText name="Nivel" value={datos.Nivel} onChange={handleChange} placeholder="Nivel" />
-          <InputText name="Cuenta_Padre" value={datos.Cuenta_Padre} onChange={handleChange} placeholder="Cuenta Padre" />
-          <InputText name="Tipo_Cuenta" value={datos.Tipo_Cuenta} onChange={handleChange} placeholder="Tipo de Cuenta" />
-          <InputText name="Naturaleza_Cuenta" value={datos.Naturaleza_Cuenta} onChange={handleChange} placeholder="Naturaleza" />
+          <InputText name="Codigo_Cuenta" value={datos.Codigo_Cuenta} onChange={handleChange} placeholder="Código de Cuenta" style={{ borderColor: '#507592' }} />
+          <InputText name="Nombre_Cuenta" value={datos.Nombre_Cuenta} onChange={handleChange} placeholder="Nombre de Cuenta" style={{ borderColor: '#507592' }} />
+          <InputText name="Nivel" value={datos.Nivel} onChange={handleChange} placeholder="Nivel" style={{ borderColor: '#507592' }} />
+          <InputText name="Cuenta_Padre" value={datos.Cuenta_Padre} onChange={handleChange} placeholder="Cuenta Padre" style={{ borderColor: '#507592' }} />
+          <InputText name="Tipo_Cuenta" value={datos.Tipo_Cuenta} onChange={handleChange} placeholder="Tipo de Cuenta" style={{ borderColor: '#507592' }} />
+          <InputText name="Naturaleza_Cuenta" value={datos.Naturaleza_Cuenta} onChange={handleChange} placeholder="Naturaleza" style={{ borderColor: '#507592' }} />
         </div>
+      </div>
+
+      <div style={{ marginTop: '20px', textAlign: 'center' }}>
+        <Button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          className="p-button p-button-primary"
+          style={{
+            backgroundColor: '#20709C',
+            borderColor: '#20709C',
+            color: '#F2F3F4',
+            marginTop: '10px',
+          }}
+          onClick={() => window.location.href = '/'}
+        />
       </div>
     </div>
   );
