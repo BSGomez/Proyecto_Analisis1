@@ -81,5 +81,22 @@ body {
   
   .p-dialog .p-dialog-content {
     background-color: #F2F3F4;
+
+    .boton-exportar-pdf {
+      background-color: #d32f2f;
+      color: white;
+      border: none;
+      padding: 0.6em 1em;
+      font-size: 0.9em;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background-color 0.3s ease;
+    }
+    
+    .boton-exportar-pdf:hover {
+      background-color: #b71c1c;
+    }
+    
   }
   

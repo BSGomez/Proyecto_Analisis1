@@ -6,6 +6,15 @@ import { connectDB } from "./db.js";  // Importar la función de conexión a la 
 import usuariosRoutes from "./routes/usuariosRoutes.js";
 //import partidasRoutes from "./routes/partidasRoutes.js";
 import cuentasRoutes from "./routes/cuentasRoutes.js";
+import libroMayorRoutes from './routes/libroMayorRoutes.js';
+import pdfLibroMayor from './routes/pdfLibroMayor.js';
+import balanceSaldosRoutes from './routes/balanceSaldosRoutes.js';
+import partidasRoutes from './routes/partidasRoutes.js';
+import estadoResultadosRoutes from './routes/estadoResultadosRoutes.js';
+import polizasRoutes from './routes/polizasRoutes.js';
+
+
+
 
 
 
@@ -31,6 +40,14 @@ app.use(express.urlencoded({ extended: true })); // Para procesar datos de formu
 app.use("/routes", usuariosRoutes);
 //app.use("/routes", partidasRoutes);
 app.use("/routes", cuentasRoutes);
+app.use("/routes", libroMayorRoutes);
+app.use("/routes", libroMayorRoutes);
+app.use("/routes", pdfLibroMayor);
+app.use("/routes", balanceSaldosRoutes);
+app.use("/routes", partidasRoutes);
+app.use('/routes', estadoResultadosRoutes);
+app.use('/routes', polizasRoutes);
+
 
 
  

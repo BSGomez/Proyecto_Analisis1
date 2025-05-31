@@ -109,7 +109,7 @@ const CatalogoCuentas = () => {
 
   return (
     <div className="catalogo-cuentas">
-      <h1 className="title"><center>Catálogo de Cuentas</center></h1>
+      <h1 style={{ textAlign: 'center', color: '#20709C' }}>Catálogo de Cuentas</h1>
 
       <div className="top-buttons" style={{ display: 'flex', gap: '10px', marginBottom: '20px', marginLeft: '20px' }}>
         <InputText

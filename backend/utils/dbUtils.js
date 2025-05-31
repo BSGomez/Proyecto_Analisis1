@@ -12,37 +12,37 @@ const getData = async (tabla, columnas = ["*"], condiciones = "") => {
     } catch (err) {
         throw new Error(`Error al obtener datos de la tabla ${tabla}: ${err.message}`);
     }
-};
+};  
 
 // Función para insertar datos en una tabla
 const insertarDatos = async (tabla, columnas, valores) => {
     try {
         const pool = await poolPromise;
         const columnasStr = columnas.join(", ");
-        const valoresStr = columnas.map((col) => `@${col}`).join(", ");
+        const valoresStr = columnas.map(col => `@${col}`).join(", ");
         const query = `INSERT INTO ${tabla} (${columnasStr}) VALUES (${valoresStr});`;
         const request = pool.request();
 
         columnas.forEach((col, index) => {
             let tipo = mssql.VarChar;
-        
-            if (col === "Nivel" || col === "Cuenta_Padre") {
-                tipo = mssql.Int; // usa Int para campos numéricos
+
+            if (["Nivel", "Cuenta_Padre"].includes(col)) {
+                tipo = mssql.Int;
+            } else if (["Saldo_Deudor", "Saldo_Acreedor"].includes(col)) {
+                tipo = mssql.Decimal(15, 2);
+            } else if (col.toLowerCase().includes("fecha")) {
+                tipo = mssql.Date;
             }
-        
-            if (valores[index] === null) {
-                request.input(col, tipo, null);
-            } else {
-                request.input(col, tipo, valores[index]);
-            }
+
+            request.input(col, tipo, valores[index]);
         });
-        
 
         await request.query(query);
     } catch (err) {
         throw new Error(`Error al insertar datos en la tabla ${tabla}: ${err.message}`);
     }
 };
+
 
 // Función para actualizar un registro
 const actualizarRegistro = async (tabla, columnaId, id, columnas, valores) => {
@@ -85,6 +85,28 @@ const eliminarRegistro = async (tabla, idColumna, idValor) => {
         throw new Error(`Error al eliminar en la tabla ${tabla}: ${err.message}`);
     }
 };
+async function ejecutarConsulta(query, params = {}) {
+    try {
+      const pool = await poolPromise;
+      const request = pool.request();
+  
+      if (typeof params !== 'object' || Array.isArray(params)) {
+        throw new Error('Los parámetros deben ser un objeto plano');
+      }
+  
+      for (const key in params) {
+        request.input(key, params[key]);
+      }
+  
+      const result = await request.query(query);
+      return result.recordset;
+    } catch (err) {
+      console.error('Error al ejecutar consulta SQL:', err);
+      throw err;
+    }
+  }
+  
+
 
 
 
@@ -94,5 +116,6 @@ export {
     insertarDatos, 
     actualizarRegistro, 
     eliminarRegistro,
+    ejecutarConsulta,
     
 };

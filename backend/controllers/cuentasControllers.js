@@ -1,5 +1,5 @@
 // Controlador para Catálogo de Cuentas
-import { getData, insertarDatos, actualizarRegistro, eliminarRegistro } from '../utils/dbutils.js';
+import { getData, insertarDatos, actualizarRegistro, eliminarRegistro } from '../utils/dbUtils.js';
 import { poolPromise } from '../db.js';
 import mssql from 'mssql'; // Importar la librería mssql
 
