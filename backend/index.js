@@ -1,13 +1,19 @@
+// index.js
 import express from "express";
+import cors from 'cors';
 import mssql from "mssql";
-import cors from "cors";
-
 
 const app = express();
 
+
+
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000',  // Asegúrate de que esta URL coincida con tu frontend
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Métodos permitidos
+    allowedHeaders: ['Content-Type', 'Authorization'],  // Encabezados permitidos
+}));
 
 const dbConfig = {
     user: "sa",
@@ -31,9 +37,11 @@ async function connectDB() {
     }
 }
 
+// Conectar a la base de datos
 connectDB();
 
-app.get("/", (req, res) => {
+// Ruta de prueba para asegurarse de que el servidor está corriendo
+app.get("/routes", (req, res) => {
     res.json("Hola, este es el backend");
 });
 
@@ -577,9 +585,7 @@ app.put("/partidas/:id", async (req, res) => {
 
 
 
-
 const PORT = 8800;
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-
