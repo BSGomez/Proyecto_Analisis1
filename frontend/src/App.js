@@ -7,7 +7,6 @@ import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
 import { Menubar } from 'primereact/menubar';
 
-
 // Tus componentes
 import LibroMayor from './components/LibroMayor';
 import CatalogoCuentas from './components/CuentasContablesTable';
@@ -19,6 +18,7 @@ import HomePage from './components/HomePage';
 import Polizas from './components/Polizas';
 import Ajustes from './components/Ajustes';
 import EstadosFinancieros from './components/EstadosFinancieros';
+import Cuenta from "./pages/Cuenta";
 
 function App() {
   const navigate = useNavigate();
@@ -60,7 +60,7 @@ function App() {
           <Route path="/polizas" element={<Polizas />} />
           <Route path="/ajustes" element={<Ajustes />} />
           <Route path="/estados-financieros" element={<EstadosFinancieros />} />
-          
+          <Route path="/cuenta" element={<Cuenta />} />
         </Routes>
       </div>
     </>
